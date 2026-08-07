@@ -29,8 +29,11 @@ This document records verified reality. Never describe planned work as complete.
   CLI path and Ubuntu WSL 2 integration; bare `docker` is absent from the current
   Windows `PATH`
 - WSL 2.3.26.0 is available; Ubuntu and `docker-desktop` are running as WSL 2
-- Ollama 0.32.6 is healthy at `http://127.0.0.1:11434/api`; its default cache exists
-  and contains no files
+- Ollama 0.32.6 is healthy at `http://127.0.0.1:11434/api`; its effective model path
+  is the empty external directory
+  `C:\Users\husoelrey\Documents\docs\AI_models\ollama`
+- The old Ollama default cache still exists and contains no files; no data was moved
+  or deleted during configuration
 - Foundry Local CLI 0.10.2 daemon is running and reports `ready`; this run uses the
   dynamic endpoint `http://127.0.0.1:48077` from `foundrylocald` PID `23948`
 - Foundry startup created one catalog metadata JSON file, but no model-weight or
@@ -38,7 +41,7 @@ This document records verified reality. Never describe planned work as complete.
   execution-provider directory is empty
 - Installed Foundry CLI uses `foundry server status`; current Microsoft guidance still
   documents the rejected `foundry service status` form
-- External model root exists and is empty:
+- External model root exists; its `ollama` child exists and contains no files:
   C:\Users\husoelrey\Documents\docs\AI_models
 - A previous interrupted Ollama download was removed from the cache; no matching
   partial model files remain in the checked locations
@@ -77,11 +80,11 @@ This document records verified reality. Never describe planned work as complete.
 
 Continue P1 with bounded external-storage configuration:
 
-1. Configure Ollama beneath the approved external model root using its supported
-   Windows environment setting.
-2. Restart only the Ollama application/process and verify the effective value and API
-   health.
-3. Keep both the old and new cache locations free of model artifacts.
+1. Configure Foundry beneath the approved external model root using the installed
+   CLI's supported cache command.
+2. Allow only the runtime-required daemon restart, then verify its effective cache
+   location, dynamic endpoint, and readiness.
+3. Keep the old and new cache locations free of model and execution-provider payloads.
 
 Do not list either model catalog, acquire models, import profiles, or run inference.
 

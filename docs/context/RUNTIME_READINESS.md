@@ -11,7 +11,7 @@ outside this prerequisite work.
 | Runtime | Version | Verified endpoint | State |
 |---|---|---|---|
 | Docker Desktop | Desktop 4.85.0; Engine/CLI 29.6.2 | `npipe:////./pipe/dockerDesktopLinuxEngine` | Engine healthy; Windows `PATH` limitation |
-| Ollama | CLI/API 0.32.6 | `http://127.0.0.1:11434/api` | Healthy; default model cache empty |
+| Ollama | CLI/API 0.32.6 | `http://127.0.0.1:11434/api` | Healthy; external model cache configured and empty |
 | Foundry Local | CLI 0.10.2 | Dynamic `http://127.0.0.1:48077` for this run | Daemon ready; no model or execution-provider payloads cached |
 
 Versions, endpoints, and state in this table are derived from the commands and exact
@@ -138,9 +138,9 @@ path resolution is a developer-shell limitation rather than an engine failure.
 ### Result
 
 Ollama CLI `0.32.6` is installed and available on the Windows `PATH`. Its local
-process and loopback API are healthy. The effective default model cache exists but is
-empty; this inventory did not list models through the API, acquire artifacts, or run
-inference.
+process and loopback API are healthy. Its model cache is configured at the approved
+external path and both that path and the old default contain no files. This work did
+not list models through the API, acquire artifacts, or run inference.
 
 The endpoint and cache interpretation follow the official
 [Ollama API version endpoint](https://docs.ollama.com/api-reference/get-version) and
@@ -178,9 +178,9 @@ exit code `0` by the inventory wrapper.
 
 Observed state:
 
-- `ollama.exe` process ID: `29060`
-- `ollama app.exe` process ID: `3980`
-- Listener: `127.0.0.1:11434`, owned by process `29060`
+- `ollama.exe` process ID: `30072`
+- `ollama app.exe` process ID: `11224`
+- Listener: `127.0.0.1:11434`, owned by process `30072`
 - Local API base URL: `http://127.0.0.1:11434/api`
 - Version response: `{"version":"0.32.6"}`
 
@@ -188,29 +188,80 @@ The matching CLI and API versions plus the loopback listener verify local servic
 health. Process IDs are observations from this run and are expected to change after a
 restart.
 
-### Model-cache configuration
+### External model-cache configuration
 
-Commands:
+The current primary [Ollama FAQ](https://docs.ollama.com/faq) and
+[Ollama for Windows](https://docs.ollama.com/windows) guidance checked on
+2026-08-07 identifies the `OLLAMA_MODELS` environment variable as the supported way
+to move model storage on Windows. It instructs users to quit the running application,
+set the user environment variable, and relaunch Ollama.
+
+Before the change, the old cache existed with only empty `blobs` and `manifests`
+directories. The approved external root was empty, the `ollama` child did not exist,
+and `OLLAMA_MODELS` was unset at process, user, and machine scopes.
+
+Configuration commands:
 
 ```powershell
-[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'Process')
+$newCache = 'C:\Users\husoelrey\Documents\docs\AI_models\ollama'
+New-Item -ItemType Directory -Path $newCache
+[Environment]::SetEnvironmentVariable('OLLAMA_MODELS', $newCache, 'User')
 [Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'User')
-[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'Machine')
+```
+
+The wrapper validated that the normalized child path remained below
+`C:\Users\husoelrey\Documents\docs\AI_models` before creating it. Exit code: `0`.
+The persistent user-scope value returned exactly:
+
+```text
+C:\Users\husoelrey\Documents\docs\AI_models\ollama
+```
+
+Only the installed Ollama processes were restarted. Their executable paths were
+validated before stopping them:
+
+```powershell
+Stop-Process -Id 29060,3980
+$env:OLLAMA_MODELS = [Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'User')
+Start-Process -FilePath 'C:\Users\husoelrey\AppData\Local\Programs\Ollama\ollama app.exe' -WindowStyle Hidden
+```
+
+Each command exited `0`. Explicitly copying the persisted value into the launch
+environment ensures that the relaunched application and its `ollama.exe serve` child
+received the same effective model path without depending on an existing desktop
+process to refresh its environment block.
+
+Post-restart evidence:
+
+- `ollama app.exe`: PID `11224`, started
+  `2026-08-07T12:15:04.5289748+03:00`
+- `ollama.exe serve`: PID `30072`, started
+  `2026-08-07T12:15:06.7363343+03:00`
+- Listener: `127.0.0.1:11434`, owned by PID `30072`
+- API response: `{"version":"0.32.6"}`
+- Persisted and launch-environment model path:
+  `C:\Users\husoelrey\Documents\docs\AI_models\ollama`
+
+Verification commands:
+
+```powershell
+[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'User')
 Get-ChildItem -LiteralPath 'C:\Users\husoelrey\.ollama\models' -Recurse -Force -File
+Get-ChildItem -LiteralPath 'C:\Users\husoelrey\Documents\docs\AI_models\ollama' -Recurse -Force -File
+Get-CimInstance Win32_Process -Filter "Name='ollama.exe' OR Name='ollama app.exe'"
+Get-NetTCPConnection -LocalPort 11434 -State Listen
+Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:11434/api/version' -TimeoutSec 5
 ```
 
 Observed state:
 
-- `OLLAMA_MODELS` was unset at process, user, and machine scopes.
-- Effective documented Windows default: `C:\Users\husoelrey\.ollama\models`
-- Cache directory exists: yes
-- Cached files: `0`
-- Cached bytes: `0`
-
-No file was created, moved, deleted, or downloaded. The project-managed external
-model root at `C:\Users\husoelrey\Documents\docs\AI_models` is not yet configured as
-Ollama's effective cache; changing that configuration is later P1 work and requires
-runtime-supported-path verification first.
+- Effective external cache exists: yes
+- External cache files: `0`
+- External cache bytes: `0`
+- Old default cache files: `0`
+- Old default cache bytes: `0`
+- No existing artifact was moved or deleted
+- No model-list, pull, create, import, or inference command was run
 
 ### Failure and fallback implications
 
