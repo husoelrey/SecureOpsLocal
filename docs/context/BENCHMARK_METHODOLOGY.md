@@ -1,291 +1,189 @@
 # SecureOps Local — Benchmark Methodology
 
-## 1. Amaç
+## 1. Objective
 
-Benchmark ana ürün değildir. Amaç, bu cihazda ve bu güvenlik kullanımında hangi yerel deployment profilinin kalite, hız ve bellek bakımından en iyi dengeyi sunduğunu ölçmektir.
+The benchmark measures which complete local deployment profile provides the best balance of security-report quality, structured-output reliability, latency, and memory use on the target device. It does not claim that one model family is universally superior.
 
-## 2. Doğru karşılaştırma birimi
+## 2. Comparison unit
 
-Karşılaştırma birimi yalnızca model adı değildir.
+A deployment profile includes:
 
-**Deployment profile**:
+- Exact model identifier, revision, and digest when available
+- Parameter class and quantization
+- Runtime and version
+- Execution provider or backend
+- Prompt and schema versions
+- Generation settings and context limit
+- Hardware and driver context
 
-- Model ailesi ve exact model ID/digest
-- Parametre sınıfı
-- Quantization
-- Runtime ve sürümü
-- Execution provider/backend
-- Prompt template sürümü
-- Generation ayarları
-- Context uzunluğu
+Results describe measured trade-offs between these profiles on this device and dataset.
 
-Örnek profiller:
+## 3. Candidate profiles
 
-- `foundry-<resolved-model>-<provider>`
-- `ollama-qwen3-8b-q4-<backend>`
+The initial benchmark includes:
 
-Bu nedenle sonuç:
+1. Foundation-Sec-8B-Reasoning Q4_K_M through Ollama
+2. Qwen3.5 9B Q4_K_M through Ollama
+3. A device-supported Foundry Local profile selected after catalog inspection
 
-- “Qwen her koşulda Phi’dan iyidir” demez.
-- “Bu cihazda bu iki deployment profilinden X, tanımlı vakalarda şu trade-off’u verdi” der.
+No candidate is the default before compatibility and benchmark results are recorded. Profile names, versions, licenses, and runtime behavior must be verified from current primary sources before download or integration.
 
-## 3. MVP profilleri
+## 4. Case contract
 
-En az iki profil:
+Each version-controlled synthetic case records:
 
-1. Foundry Local üzerinde gerçekten çalışan küçük/orta chat modeli
-2. Ollama üzerinde Qwen3 8B 4-bit veya donanım gerekirse Qwen3 4B
+- case_id and title
+- log_type and input_file
+- input_sha256
+- expected_findings
+- forbidden_or_unsupported_claims
+- expected_recommendation_categories
+- expected_source_topics
+- acceptable_risk_levels
+- notes
 
-Üçüncü profil ancak ana iki profil ve scoring tamamlandıysa.
+## 5. Minimum case coverage
 
-## 4. Benchmark case şeması
+At least ten cases cover:
 
-Her vaka:
+1. A normal successful login
+2. A single failed login
+3. Repeated failures from one address
+4. One address targeting multiple accounts
+5. Attempts involving a privileged account
+6. Invalid-user attempts
+7. Success after repeated failures
+8. Multiple source addresses
+9. IPv6 input
+10. Malformed or unrelated input
 
-- `case_id`
-- `title`
-- `log_type`
-- `input_file`
-- `input_sha256`
-- `expected_findings`
-- `forbidden_or_unsupported_claims`
-- `expected_recommendation_categories`
-- `expected_source_topics`
-- `acceptable_risk_levels`
-- `notes`
+Additional cases should include public-key authentication, low-and-slow activity, timestamp ambiguity, duplicate lines, prompt injection, plausible administrator automation, high-volume failures without success, and supported logging-format variants.
 
-Vakalar sentetik ve version-controlled olur.
+## 6. Fixed evidence package
 
-## 5. İlk 10–20 vaka
+Every profile receives the same:
 
-Zorunlu minimum:
-
-1. Normal tek başarılı giriş
-2. Tek başarısız giriş
-3. Aynı IP’den tekrarlanan başarısız giriş
-4. Bir IP’den çok kullanıcı denemesi
-5. Root hesabına denemeler
-6. Invalid user denemeleri
-7. Çok başarısızlıktan sonra başarılı giriş
-8. Birden fazla kaynak IP
-9. IPv6 kaynağı
-10. SSH olayı içermeyen/bozuk log
-
-Genişleme:
-
-- Public-key normal giriş
-- Low-and-slow örüntü
-- Timestamp/year belirsizliği
-- Duplicate satırlar
-- Prompt injection satırı
-- Benign admin automation benzeri örüntü
-- Başarılı giriş olmadan yüksek hacim
-- Farklı host/PID formatları
-
-## 6. Sabit input paketi
-
-Her profil aynı:
-
-- Raw test fixture
-- Parser version/result
-- Retrieved top-k chunk IDs ve content
+- Synthetic input fixture
+- Parser version and result
+- Retrieved top-k chunk identifiers and content
 - Knowledge snapshot hash
-- System prompt version
-- Output schema version
-- Temperature/top_p
-- Seed, desteklendiği ölçüde
-- Max output token
-- Timeout
+- Prompt and output-schema versions
+- Compatible temperature, top-p, seed, output limit, and timeout settings
 
-Retrieval her model için tekrar çalıştırılıp farklı sonuç üretmez. Bir kez üretilen evidence pack iki profile verilir.
+Retrieval runs once per case. The resulting evidence package is reused across profiles and repetitions.
 
-## 7. Performans metrikleri
+## 7. Performance metrics
 
-### Cold load time
+### Cold-load time
 
-Model cache’teyken fakat memory’de değilken load başlangıcından hazır duruma kadar.
-
-İlk indirme süresi ayrı onboarding metriğidir; inference performansına karıştırılmaz.
+Measure from load initiation until the cached model is ready. Initial artifact-download time is an onboarding metric and is not inference performance.
 
 ### Time to first token
 
-Request gönderiminden ilk içerik token/chunk’ına kadar. Streaming gerektirir.
+Measure from request start to the first content token or chunk through streaming.
 
-### Total response time
+### Total latency
 
-Request başlangıcından response completion’a kadar.
+Measure from request start through completed response receipt.
 
-### Tokens per second
+### Throughput
 
-Tercih edilen formül:
+Preferred formula:
 
-`completion_tokens / (completion_end - first_token_time)`
+completion tokens divided by the duration from first token to completion.
 
-Provider token sayısı vermiyorsa kullanılan tokenizer/metot kaydedilir; tahminse `estimated=true`.
+If the provider does not report token counts, record the tokenizer or estimation method and mark the value as estimated.
 
-### RAM
+### Memory
 
-- Ortalama process RSS
-- Peak process RSS
-- Gerekirse system used-memory delta
-- Ölçülen process kapsamı açıkça yazılır
+Record average and peak process working set or RSS and clearly name the measured processes. Host runtimes and the application container must not be conflated. System-memory deltas may be reported separately.
 
-Host runtime ve Docker app ayrı process olduğundan yalnızca FastAPI RAM’i model RAM’i diye sunma.
+### CPU and GPU
 
-### CPU/GPU
+Record utilization only when a reliable repeatable counter exists, together with the device and backend. Leave unsupported metrics unavailable rather than estimating them. Hardware TOPS is not an application-performance metric.
 
-- Güvenilir ve tekrarlanabilir sayaç varsa
-- Backend/device açıkça kaydedilir
-- Intel GPU telemetry belirsizse metrik boş bırakılır
+## 8. Deterministic quality metrics
 
-TOPS doğrudan uygulama metriği değildir.
+- Expected finding recall
+- Unsupported observed-finding count
+- First-attempt schema compliance
+- Compliance after one repair
+- Citation identifier validity
+- Citation coverage
+- Recommendation-category completeness
+- Risk-level consistency
+- Detection of prohibited certainty or remediation language
 
-## 8. Deterministik kalite metrikleri
+Free-form interpretation is not presented as fully machine-verifiable entailment. Deterministic scoring evaluates only fields and patterns with defensible rules.
 
-### Expected finding recall
+## 9. Manual rubric
 
-Beklenen yapılandırılmış finding’lerin rapor/observed findings içinde doğru değerle bulunma oranı.
-
-### Unsupported claim count
-
-Observed findings içinde parser truth ile desteklenmeyen yapılandırılmış iddia sayısı.
-
-Serbest interpretation metni için tam otomatik entailment iddiası yapılmaz; belirli forbidden claim pattern’leri sayılır.
-
-### Schema compliance
-
-- İlk denemede geçerli
-- Bir repair sonrası geçerli
-- Geçersiz
-
-### Citation validity
-
-- Citation ID retrieved context içinde mi?
-- DB’de gerçek mi?
-
-### Citation coverage
-
-- Yorum ve önerilerin kaçında citation var?
-
-### Recommendation completeness
-
-Vakadaki beklenen savunma kategorilerinin karşılanma oranı.
-
-### Risk consistency
-
-Risk seviyesi acceptable set içinde mi?
-
-### Terminology safety
-
-Kesin saldırı iddiası veya otomatik remediation dili var mı?
-
-## 9. Manuel değerlendirme
-
-Manuel rubric, 0–2:
+Score each category from zero to two:
 
 - Groundedness
-- Citation’ın iddiayı gerçekten desteklemesi
-- Açıklamanın temkinli olması
-- Önerinin uygulanabilirliği
-- Raporun okunabilirliği
+- Whether citations support the associated claims
+- Cautious and evidence-aware interpretation
+- Practical defensive recommendations
+- Report readability
 
-Puan açıklamaları:
+Zero is incorrect or absent, one is partially adequate, and two is clearly adequate. Record evaluator and date. Do not use another model as the sole judge.
 
-- 0: başarısız/yanlış
-- 1: kısmen doğru veya eksik
-- 2: açıkça yeterli
+## 10. Repetition and consistency
 
-Manuel değerlendiren kişi ve tarih kaydedilir. Sadece başka bir LLM judge’a güvenilmez.
+- Run every case at least once per profile.
+- Run three repetitions for three to five representative cases.
+- Fix the seed when supported.
+- Compare schema success, risk-category agreement, finding-set exact match or Jaccard similarity, and metric variance.
 
-## 10. Tekrar ve tutarlılık
+## 11. Cold and warm scenarios
 
-- Bütün vakalarda en az bir run.
-- Seçilen 3–5 temsili vakada üç tekrar.
-- Seed destekleniyorsa sabitlenir.
-- Aynı risk kategorisi oranı.
-- Finding set Jaccard veya exact match.
-- Schema success varyansı.
+Cold measurements begin with a cached model not resident in memory. Warm measurements use an already loaded model and declare whether a warm-up request was excluded.
 
-## 11. Cold ve warm senaryolar
+Profiles run sequentially so that large models do not compete for the target device's limited memory. Runtime-specific unload behavior and residual memory are recorded.
 
-Cold benchmark:
+## 12. Reasoning behavior
 
-- Model memory’de değil
-- Cache hazır
-- Load time dahil/ayrı rapor
+Reasoning or thinking settings are explicit profile configuration. Hidden reasoning text is never part of the product response, logs, persisted records, or benchmark artifacts. If one runtime exposes different reasoning controls, the difference is documented as part of the profile rather than hidden by an invalid equivalence claim.
 
-Warm benchmark:
+## 13. Result reporting
 
-- Model loaded
-- Aynı koşullarda arka arkaya inference
-- Isınma run’ı sonuçlara dahil edilip edilmediği açıklanır
+For each profile report:
 
-İki profil benchmark sırasında aynı anda memory’de tutulmaz; 16 GB RAM nedeniyle sırayla çalıştırılır.
+- Full profile metadata
+- Completed, failed, and timed-out cases
+- First-attempt and repaired schema rates
+- Finding recall and unsupported claims
+- Citation validity and coverage
+- Recommendation completeness and risk consistency
+- Median and P95 total latency
+- Median time to first token and throughput
+- Peak memory with measurement scope
+- Manual-rubric averages
 
-## 12. Thinking/reasoning kontrolü
+A single opaque composite score is not the primary result. If a secondary weighted score is added, its formula is explicit and the raw metrics remain visible.
 
-Qwen gibi thinking mode destekleyen modellerde:
+## 14. Reproducibility manifest
 
-- Ana structured report benchmark’ında thinking ayarı açıkça sabitlenir.
-- Foundry profiliyle karşılaştırmayı bozacak gizli token/uzun reasoning farkı kaydedilir.
-- Gerekirse `thinking off` ana profil, `thinking on` opsiyonel deney olur.
+Record:
 
-## 13. Benchmark sonucu tablosu
-
-Her profil için:
-
-- Profil metadata
-- Başarılı vaka sayısı
-- First-attempt schema rate
-- Finding recall ortalama
-- Unsupported claim toplam/ortalama
-- Citation validity/coverage
-- Recommendation completeness
-- Risk consistency
-- Median/P95 total latency
-- Median TTFT
-- Median token/s
-- Peak RAM
-- Manuel rubric ortalama
-
-Tek birleşik “magic score” ana sonuç yapılmaz. İstenirse açık ağırlıklı yardımcı skor verilir, fakat ham metrikler görünür kalır.
-
-## 14. Opsiyonel deneyler
-
-Ana benchmark bittikten sonra:
-
-- RAG açık/kapalı
-- TF-IDF/embedding retrieval
-- Qwen 4B/8B
-- Foundry alternatif model
-- Thinking on/off
-- Farklı context top-k
-
-Bu deneyler ana iki profil karşılaştırmasını gölgelememelidir.
-
-## 15. Reproducibility manifesti
-
-- App commit SHA
-- OS/build
-- CPU/RAM/GPU ve driver
-- Runtime sürümleri
-- Model ID/digest/quantization
-- Execution backend
-- Prompt/schema version
-- Knowledge snapshot hash
-- Case dataset version
-- Generation config
+- Application commit SHA
+- Operating-system build
+- CPU, memory, GPU, driver, and execution backend
+- Runtime versions
+- Model IDs, revisions, digests, and quantization
+- Prompt and schema versions
+- Knowledge snapshot and case-dataset versions
+- Generation settings
 - Benchmark timestamp
-- İnternet açık/kapalı durumu
+- Network state
 
-## 16. Başarı kriteri
+## 15. Success criteria
 
-Benchmark başarılıdır eğer:
+The benchmark is valid when:
 
-- En az 10 vaka iki profilde tamamlanmıştır.
-- Aynı evidence paketleri kullanılmıştır.
-- Deterministic scoring testleri geçmektedir.
-- Performans formülleri açıktır.
-- Başarısız/timeout vakaları gizlenmemiştir.
-- Sonuçlar profil trade-off’u olarak yorumlanmıştır.
-
+- At least ten cases complete or fail transparently for every required profile.
+- Identical evidence packages are used.
+- Deterministic scorer tests pass.
+- Metric formulas and measurement scopes are documented.
+- Timeouts, invalid outputs, and unavailable metrics are not hidden.
+- Conclusions are framed as measured profile trade-offs.
