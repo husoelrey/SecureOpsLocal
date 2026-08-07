@@ -6,6 +6,18 @@ This file records read-only readiness evidence for the local runtimes used by
 SecureOps Local. Installation, upgrade, model acquisition, cache population, and
 inference are outside this inventory task.
 
+## Inventory summary
+
+| Runtime | Version | Verified endpoint | State |
+|---|---|---|---|
+| Docker Desktop | Desktop 4.85.0; Engine/CLI 29.6.2 | `npipe:////./pipe/dockerDesktopLinuxEngine` | Engine healthy; Windows `PATH` limitation |
+| Ollama | CLI/API 0.32.6 | `http://127.0.0.1:11434/api` | Healthy; default model cache empty |
+| Foundry Local | CLI 0.10.2 | Unavailable while daemon is stopped | Not ready; default cache directory absent |
+
+Versions, endpoints, and state in this table are derived from the commands and exact
+outputs in the runtime-specific sections below. No model response was requested or
+verified.
+
 ## Docker Desktop and WSL 2
 
 ### Result
@@ -348,3 +360,14 @@ loopback endpoint and connectivity can be verified. Until then, no Foundry profi
 may be marked available; the verified Ollama loopback service is the only healthy
 local model runtime endpoint, and native Windows FastAPI remains the deployment
 fallback if Docker bridging is unsuitable.
+
+## Inventory conclusion
+
+The bounded runtime-readiness checklist item is complete because installation,
+version, service state, endpoint availability, and cache state were observed for all
+three required runtimes. Completion of the inventory does not mean all runtimes are
+healthy: Docker and Ollama are healthy, while Foundry Local remains unavailable until
+its daemon is deliberately started and its dynamic endpoint is verified.
+
+The next safe P1 feature is Foundry daemon and endpoint verification without catalog,
+execution-provider, cache-configuration, model-download, or inference operations.

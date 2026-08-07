@@ -7,7 +7,7 @@ This document records verified reality. Never describe planned work as complete.
 ## Repository
 
 - Path: C:\Users\husoelrey\Documents\Projects\SecureOpsLocal
-- Branch: feature/p0-repository-governance
+- Branch: feature/p1-runtime-readiness
 - Application code: not created
 - Python project and dependencies: not created
 - Database schema and migrations: not created
@@ -16,6 +16,7 @@ This document records verified reality. Never describe planned work as complete.
 - Root .gitignore: created; representative ignored and trackable paths verified
 - Repository audit: local Markdown links and Markdown file references resolve; no
   sensitive or unexpected runtime artifacts were found
+- Runtime readiness inventory: created at `docs/context/RUNTIME_READINESS.md`
 
 ## Verified environment
 
@@ -24,9 +25,16 @@ This document records verified reality. Never describe planned work as complete.
 - Approximately 15.52 GB RAM
 - Intel Arc Graphics
 - Host Python 3.13.3; project target is Python 3.12
-- Docker Desktop 4.85.0 is installed; engine health is not yet verified
-- Ollama 0.32.6 is installed; service was not running at the last check
-- Foundry Local CLI 0.10.2 is installed
+- Docker Desktop 4.85.0 and Engine 29.6.2 are healthy through the explicit Windows
+  CLI path and Ubuntu WSL 2 integration; bare `docker` is absent from the current
+  Windows `PATH`
+- WSL 2.3.26.0 is available; Ubuntu and `docker-desktop` are running as WSL 2
+- Ollama 0.32.6 is healthy at `http://127.0.0.1:11434/api`; its default cache exists
+  and contains no files
+- Foundry Local CLI 0.10.2 is installed, but its daemon is not running and no endpoint
+  is available; its default cache directory does not exist
+- Installed Foundry CLI uses `foundry server status`; current Microsoft guidance still
+  documents the rejected `foundry service status` form
 - External model root exists and is empty:
   C:\Users\husoelrey\Documents\docs\AI_models
 - A previous interrupted Ollama download was removed from the cache; no matching
@@ -54,7 +62,7 @@ This document records verified reality. Never describe planned work as complete.
 | Phase | Status | Evidence |
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
-| P1 — Local runtime and model profiles | Not started | No verified model response |
+| P1 — Local runtime and model profiles | In progress | Runtime versions and health inventoried; Foundry daemon and all model profiles remain unverified |
 | P2 — Deterministic SSH analysis core | Not started | No application code |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
@@ -64,13 +72,14 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Begin P1 with a read-only runtime readiness inventory:
+Continue P1 with a bounded Foundry daemon and endpoint verification:
 
-1. Verify the installed Docker Desktop, Ollama, and Foundry Local versions.
-2. Verify Docker engine, Ollama service, and Foundry Local health.
-3. Record exact commands, endpoints, failures, and fallback implications.
+1. Start the Foundry daemon deliberately without listing or downloading models.
+2. Record the dynamic loopback endpoint and repeat service-health checks.
+3. Reconfirm that no catalog, execution-provider, or model artifact was populated.
 
-Do not download or import models during this first P1 task.
+Do not list the Foundry catalog, change cache configuration, download execution
+providers, acquire models, or run inference during this task.
 
 ## Open decisions
 
