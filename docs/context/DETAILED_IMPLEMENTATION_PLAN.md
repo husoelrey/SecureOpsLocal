@@ -36,7 +36,7 @@ remediation system. It does not train or fine-tune a model.
 
 The last verified local inventory is:
 
-- Active work branch: `feature/p0-repository-governance`
+- Active work branch: `feature/p1-runtime-readiness`
 - Application code: not created
 - Host operating system: Windows 11
 - CPU: Intel Core Ultra 5 125H
@@ -44,13 +44,20 @@ The last verified local inventory is:
 - GPU: Intel Arc Graphics
 - Host Python: 3.13.3
 - Project Python target: 3.12
-- Docker Desktop: installed, version 4.85.0; service health still needs verification
-- Ollama: installed, version 0.32.6; service was not running at the last check
-- Foundry Local CLI: installed, version 0.10.2
+- Docker Desktop: version 4.85.0; Engine 29.6.2 is healthy through the explicit
+  Windows CLI path and Ubuntu WSL 2 integration
+- Windows Docker CLI: installed, but bare `docker` is not resolvable from the current
+  Windows `PATH`
+- Ollama: version 0.32.6; loopback API is healthy at
+  `http://127.0.0.1:11434/api`
+- Foundry Local CLI: version 0.10.2; daemon is not running and no endpoint is active
 - External model root: exists and is empty at
   `C:\Users\husoelrey\Documents\docs\AI_models`
 - Previous interrupted Ollama download: removed from the checked cache locations
 - Model download completion and file integrity: not verified
+
+Exact commands, outputs, cache observations, failures, and fallback implications are
+recorded in [`RUNTIME_READINESS.md`](RUNTIME_READINESS.md).
 
 Do not treat installation as successful runtime readiness. P1 closes only after each
 selected profile returns a valid response and its metadata is recorded.

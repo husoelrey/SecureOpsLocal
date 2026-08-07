@@ -3,9 +3,10 @@
 Use PLAN.md as the executable checklist. Complete phases in order and do not bypass a
 failing gate.
 
-Current verified transition: P0 is complete. P1 is next and begins with a read-only
-inventory of installed runtime versions and service health before any model download
-or import.
+Current verified transition: P0 is complete and P1 is in progress. The read-only
+runtime inventory is complete. The next bounded task is to start the Foundry daemon
+without catalog or model operations, then verify its dynamic local endpoint and
+confirm that no runtime artifact was populated.
 
 ## P0 — Repository governance and project context
 
