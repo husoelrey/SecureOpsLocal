@@ -7,7 +7,7 @@ This document records verified reality. Never describe planned work as complete.
 ## Repository
 
 - Path: C:\Users\husoelrey\Documents\Projects\SecureOpsLocal
-- Branch: feature/p1-runtime-readiness
+- Branch: feature/p1-runtime-storage
 - Application code: not created
 - Python project and dependencies: not created
 - Database schema and migrations: not created
@@ -31,8 +31,11 @@ This document records verified reality. Never describe planned work as complete.
 - WSL 2.3.26.0 is available; Ubuntu and `docker-desktop` are running as WSL 2
 - Ollama 0.32.6 is healthy at `http://127.0.0.1:11434/api`; its default cache exists
   and contains no files
-- Foundry Local CLI 0.10.2 is installed, but its daemon is not running and no endpoint
-  is available; its default cache directory does not exist
+- Foundry Local CLI 0.10.2 daemon is running and reports `ready`; this run uses the
+  dynamic endpoint `http://127.0.0.1:48077` from `foundrylocald` PID `23948`
+- Foundry startup created one catalog metadata JSON file, but no model-weight or
+  execution-provider payload; the daemon reports zero locally cached models and the
+  execution-provider directory is empty
 - Installed Foundry CLI uses `foundry server status`; current Microsoft guidance still
   documents the rejected `foundry service status` form
 - External model root exists and is empty:
@@ -62,7 +65,7 @@ This document records verified reality. Never describe planned work as complete.
 | Phase | Status | Evidence |
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
-| P1 — Local runtime and model profiles | In progress | Runtime versions and health inventoried; Foundry daemon and all model profiles remain unverified |
+| P1 — Local runtime and model profiles | In progress | Runtime versions and health inventoried; Foundry daemon ready; all deployment profiles remain unverified |
 | P2 — Deterministic SSH analysis core | Not started | No application code |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
@@ -72,14 +75,15 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue P1 with a bounded Foundry daemon and endpoint verification:
+Continue P1 with bounded external-storage configuration:
 
-1. Start the Foundry daemon deliberately without listing or downloading models.
-2. Record the dynamic loopback endpoint and repeat service-health checks.
-3. Reconfirm that no catalog, execution-provider, or model artifact was populated.
+1. Configure Ollama beneath the approved external model root using its supported
+   Windows environment setting.
+2. Restart only the Ollama application/process and verify the effective value and API
+   health.
+3. Keep both the old and new cache locations free of model artifacts.
 
-Do not list the Foundry catalog, change cache configuration, download execution
-providers, acquire models, or run inference during this task.
+Do not list either model catalog, acquire models, import profiles, or run inference.
 
 ## Open decisions
 

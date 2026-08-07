@@ -2,9 +2,9 @@
 
 Last verified: **2026-08-07**
 
-This file records read-only readiness evidence for the local runtimes used by
-SecureOps Local. Installation, upgrade, model acquisition, cache population, and
-inference are outside this inventory task.
+This file records readiness evidence for the local runtimes used by SecureOps Local.
+Installation, upgrade, model acquisition, model-cache population, and inference are
+outside this prerequisite work.
 
 ## Inventory summary
 
@@ -12,7 +12,7 @@ inference are outside this inventory task.
 |---|---|---|---|
 | Docker Desktop | Desktop 4.85.0; Engine/CLI 29.6.2 | `npipe:////./pipe/dockerDesktopLinuxEngine` | Engine healthy; Windows `PATH` limitation |
 | Ollama | CLI/API 0.32.6 | `http://127.0.0.1:11434/api` | Healthy; default model cache empty |
-| Foundry Local | CLI 0.10.2 | Unavailable while daemon is stopped | Not ready; default cache directory absent |
+| Foundry Local | CLI 0.10.2 | Dynamic `http://127.0.0.1:48077` for this run | Daemon ready; no model or execution-provider payloads cached |
 
 Versions, endpoints, and state in this table are derived from the commands and exact
 outputs in the runtime-specific sections below. No model response was requested or
@@ -224,19 +224,20 @@ the verified loopback endpoint if container-to-host access is unavailable.
 
 ### Result
 
-Foundry Local CLI `0.10.2` is installed and available on the Windows `PATH`, but its
-local daemon is not running. No local endpoint URL or service process could therefore
-be verified. The configured default cache path is reported by the CLI, but the cache
-directory does not exist and contains no artifacts.
+Foundry Local CLI `0.10.2` is installed and available on the Windows `PATH`. Its
+daemon was deliberately started with the installed CLI and reached the CLI-reported
+`ready` state. For this run it exposed the dynamic loopback endpoint
+`http://127.0.0.1:48077` from process `foundrylocald` PID `23948`; both values are
+ephemeral and must be discovered again after a restart.
 
 The current primary reference checked on 2026-08-07 was Microsoft's
 [Foundry Local CLI guidance](https://learn.microsoft.com/en-us/azure/foundry-local/how-to/how-to-use-foundry-local-cli).
 That page describes `foundry service status` and warns that a first
 `foundry model list` can download execution providers. The installed CLI behaves
 differently: its built-in help exposes the daemon group as `foundry server` and
-rejects `foundry service`. For this inventory, installed `--help` output is treated as
-the executable contract and the documentation difference is retained as a
-limitation, not silently corrected.
+rejects `foundry service`. The installed `--help` output was therefore treated as
+the executable contract. No model-list, model-download, load, or inference command
+was run.
 
 ### CLI version and command surface
 
@@ -260,9 +261,47 @@ Observed state:
 - Read-only daemon check: `foundry server status`
 - Read-only cache-location check: `foundry cache location`
 
-### Service health and endpoint
+### Daemon startup, health, and endpoint
 
-Command:
+Before startup, these commands established the baseline:
+
+```powershell
+foundry server status --output json
+foundry cache location --output json
+foundry config show --output json
+Test-Path -LiteralPath 'C:\Users\husoelrey\.foundry\cache'
+Test-Path -LiteralPath 'C:\Users\husoelrey\Documents\docs\AI_models'
+# For each existing path:
+Get-ChildItem -LiteralPath <path> -Recurse -Force -File
+Get-ChildItem -LiteralPath <path> -Recurse -Force -Directory
+```
+
+Each CLI command exited `0`; both filesystem inspections completed successfully.
+The exact status and cache-location outputs were:
+
+```json
+{"running":false,"state":"not_running"}
+{"path":"C:\\Users\\husoelrey\\.foundry\\cache\\models","userSet":false}
+```
+
+The default Foundry cache did not exist. The approved external root existed and was
+empty: `0` files, `0` bytes, and no child directories.
+
+Startup command:
+
+```powershell
+foundry server start --output json
+```
+
+Exit code: `0`.
+
+Exact output:
+
+```json
+{"running":true,"webUrls":["http://127.0.0.1:48077"],"port":48077}
+```
+
+Readiness command:
 
 ```powershell
 foundry server status --output json
@@ -273,12 +312,20 @@ Exit code: `0`.
 Exact output:
 
 ```json
-{"running":false,"state":"not_running"}
+{"running":true,"state":"ready","pid":23948,"webUrls":["http://127.0.0.1:48077"],"startedAt":"2026-08-07T09:08:14.8675625+00:00","uptime":"0s","logFile":""}
 ```
 
-Additional read-only process and Windows-service checks found no process or registered
-Windows service with `foundry` in its name. Because the daemon is stopped, there is no
-active PID, uptime, listener, or endpoint URL to record.
+`Get-Process -Id 23948` resolved the reported PID to `foundrylocald`, with process
+start time `2026-08-07T12:08:13.4033438+03:00`. A `TcpClient` connection to
+`127.0.0.1:48077` succeeded. These checks establish that the reported process owned
+a reachable dynamic loopback listener while the installed CLI reported the daemon
+`ready`.
+
+The installed preview server does not expose a dedicated HTTP health route documented
+for this command surface. Probes to `/health` and to the older `/openai/status` route
+both reached the listener but returned HTTP `404`. Consequently, the successful
+`foundry server status` `ready` result is the health authority for this CLI version;
+an HTTP `200` health endpoint is not claimed.
 
 Command:
 
@@ -296,9 +343,8 @@ captured JSON:
 ]
 ```
 
-The port is automatic and the daemon is not running, so a concrete configured local
-endpoint cannot be claimed. Starting or restarting the daemon would change external
-runtime state and was intentionally not performed for this read-only inventory.
+The automatic port setting agrees with the observed dynamic endpoint. The specific
+port must not be hard-coded into application configuration.
 
 ### Model-cache configuration
 
@@ -316,17 +362,36 @@ Exact output:
 {"path":"C:\\Users\\husoelrey\\.foundry\\cache\\models","userSet":false}
 ```
 
-Filesystem inspection result:
+Post-start filesystem and daemon-log inspection found:
 
 - Effective cache: `C:\Users\husoelrey\.foundry\cache\models`
 - User override: no
-- Cache directory exists: no
-- Cached files: `0`
-- Cached bytes: `0`
+- Locally cached models reported by the daemon: `0`
+- Execution-provider directory: `C:\Users\husoelrey\.foundry\ep`
+- Execution-provider files: `0`
+- Model or execution-provider binary payloads: `0`
+- External model root files: `0`
+- Generated metadata index:
+  `C:\Users\husoelrey\.foundry\cache\models\foundry.modelinfo.json`,
+  `79,275` bytes, SHA-256
+  `D06C700AA5CC62B481ADA4F606048900A050642A08D54D97C4C303C9397749A1`
 
-No cache directory or artifact was created. In particular, `foundry model list`,
-`foundry model run`, model download commands, and cache-changing commands were not
-executed because they can populate or alter runtime state.
+The post-start evidence commands were:
+
+```powershell
+Get-ChildItem -LiteralPath 'C:\Users\husoelrey\.foundry' -Recurse -Force
+Get-FileHash -LiteralPath 'C:\Users\husoelrey\.foundry\cache\models\foundry.modelinfo.json' -Algorithm SHA256
+foundry server logs -n 50
+```
+
+Each command exited `0`. Daemon startup automatically contacted the Azure Foundry
+catalog and wrote the JSON metadata index even though no catalog-list command was
+issued. It also attempted automatic execution-provider registration, which failed
+immediately because the generated request contained unknown provider names. The
+daemon log then reported
+`0` locally cached models; the execution-provider directory remained empty. This
+means no model weights or execution-provider payloads were acquired, but daemon
+startup is not network-silent and is not by itself proof of air-gapped readiness.
 
 ### Failures and minimum reproduction
 
@@ -346,28 +411,26 @@ Unrecognized command or argument 'service'.
 Hint: Run 'foundry --help' to see usage.
 ```
 
-Minimum service-state reproduction:
+Minimum current-state reproduction:
 
 ```powershell
 foundry server status --output json
 ```
 
-Current result: `{"running":false,"state":"not_running"}`.
+Current result: daemon running with state `ready`. The endpoint and PID are dynamic,
+so the JSON output must be read rather than copied from this record.
 
-Fallback implication: Foundry Local is not currently ready for provider requests.
-The daemon must be deliberately started in a later bounded P1 task before its dynamic
-loopback endpoint and connectivity can be verified. Until then, no Foundry profile
-may be marked available; the verified Ollama loopback service is the only healthy
-local model runtime endpoint, and native Windows FastAPI remains the deployment
-fallback if Docker bridging is unsuitable.
+Fallback implication: daemon readiness does not make a Foundry deployment profile
+available. No model or execution provider has been selected, downloaded, loaded, or
+tested. Native Windows FastAPI remains the deployment fallback if later Docker bridge
+verification is unsuitable.
 
 ## Inventory conclusion
 
-The bounded runtime-readiness checklist item is complete because installation,
-version, service state, endpoint availability, and cache state were observed for all
-three required runtimes. Completion of the inventory does not mean all runtimes are
-healthy: Docker and Ollama are healthy, while Foundry Local remains unavailable until
-its daemon is deliberately started and its dynamic endpoint is verified.
+The bounded runtime-readiness inventory and Foundry daemon-readiness prerequisite are
+complete. Docker, Ollama, and the Foundry daemon are healthy on their verified local
+surfaces, but no Foundry deployment profile exists and container-to-host connectivity
+is still unverified.
 
-The next safe P1 feature is Foundry daemon and endpoint verification without catalog,
-execution-provider, cache-configuration, model-download, or inference operations.
+The next bounded P1 step is to configure and verify runtime-supported external model
+storage without acquiring models or running inference.
