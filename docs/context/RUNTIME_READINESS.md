@@ -207,3 +207,144 @@ observed state, which is safe for local use but does not prove reachability from
 Docker container. `host.docker.internal:11434` connectivity and any required trusted
 host-binding change remain a later, explicit P1 test. Native Windows FastAPI can use
 the verified loopback endpoint if container-to-host access is unavailable.
+
+## Microsoft Foundry Local
+
+### Result
+
+Foundry Local CLI `0.10.2` is installed and available on the Windows `PATH`, but its
+local daemon is not running. No local endpoint URL or service process could therefore
+be verified. The configured default cache path is reported by the CLI, but the cache
+directory does not exist and contains no artifacts.
+
+The current primary reference checked on 2026-08-07 was Microsoft's
+[Foundry Local CLI guidance](https://learn.microsoft.com/en-us/azure/foundry-local/how-to/how-to-use-foundry-local-cli).
+That page describes `foundry service status` and warns that a first
+`foundry model list` can download execution providers. The installed CLI behaves
+differently: its built-in help exposes the daemon group as `foundry server` and
+rejects `foundry service`. For this inventory, installed `--help` output is treated as
+the executable contract and the documentation difference is retained as a
+limitation, not silently corrected.
+
+### CLI version and command surface
+
+Commands:
+
+```powershell
+Get-Command foundry
+foundry --version
+foundry --help
+foundry server --help
+foundry cache --help
+```
+
+Each command exited `0`.
+
+Observed state:
+
+- Command shim: `C:\Users\husoelrey\AppData\Local\Microsoft\WindowsApps\foundry.exe`
+- CLI version: `0.10.2`
+- Installed daemon command group: `server`
+- Read-only daemon check: `foundry server status`
+- Read-only cache-location check: `foundry cache location`
+
+### Service health and endpoint
+
+Command:
+
+```powershell
+foundry server status --output json
+```
+
+Exit code: `0`.
+
+Exact output:
+
+```json
+{"running":false,"state":"not_running"}
+```
+
+Additional read-only process and Windows-service checks found no process or registered
+Windows service with `foundry` in its name. Because the daemon is stopped, there is no
+active PID, uptime, listener, or endpoint URL to record.
+
+Command:
+
+```powershell
+foundry config show --output json
+```
+
+Exit code: `0`. Only non-secret endpoint/cache-related settings were selected from the
+captured JSON:
+
+```json
+[
+  {"key":"port","value":"auto","userSet":false},
+  {"key":"cache-directory","value":"C:\\Users\\husoelrey\\.foundry\\cache\\models","userSet":false}
+]
+```
+
+The port is automatic and the daemon is not running, so a concrete configured local
+endpoint cannot be claimed. Starting or restarting the daemon would change external
+runtime state and was intentionally not performed for this read-only inventory.
+
+### Model-cache configuration
+
+Command:
+
+```powershell
+foundry cache location --output json
+```
+
+Exit code: `0`.
+
+Exact output:
+
+```json
+{"path":"C:\\Users\\husoelrey\\.foundry\\cache\\models","userSet":false}
+```
+
+Filesystem inspection result:
+
+- Effective cache: `C:\Users\husoelrey\.foundry\cache\models`
+- User override: no
+- Cache directory exists: no
+- Cached files: `0`
+- Cached bytes: `0`
+
+No cache directory or artifact was created. In particular, `foundry model list`,
+`foundry model run`, model download commands, and cache-changing commands were not
+executed because they can populate or alter runtime state.
+
+### Failures and minimum reproduction
+
+The command documented by the current Microsoft page does not exist in the installed
+CLI:
+
+```powershell
+foundry service status
+```
+
+Exit code: `2`.
+
+Observed error:
+
+```text
+Unrecognized command or argument 'service'.
+Hint: Run 'foundry --help' to see usage.
+```
+
+Minimum service-state reproduction:
+
+```powershell
+foundry server status --output json
+```
+
+Current result: `{"running":false,"state":"not_running"}`.
+
+Fallback implication: Foundry Local is not currently ready for provider requests.
+The daemon must be deliberately started in a later bounded P1 task before its dynamic
+loopback endpoint and connectivity can be verified. Until then, no Foundry profile
+may be marked available; the verified Ollama loopback service is the only healthy
+local model runtime endpoint, and native Windows FastAPI remains the deployment
+fallback if Docker bridging is unsuitable.
