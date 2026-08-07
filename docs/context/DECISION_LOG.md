@@ -116,10 +116,14 @@ Statuses: Proposed, Accepted, Superseded, Rejected.
 
 ## D-022 — External model storage
 
-- Status: Accepted
+- Status: Accepted; configuration condition verified 2026-08-07
 - Decision: Store downloads and runtime model caches outside the repository under:
   C:\Users\husoelrey\Documents\docs\AI_models
 - Condition: Verify each runtime's supported cache configuration before moving or downloading models.
+- Verification: User-scope `OLLAMA_MODELS` resolves to the empty `ollama` child, and
+  `foundry cache location --output json` resolves with `userSet:true` to the `foundry`
+  child. Both are below the approved root. Old paths contain no model payloads;
+  Foundry's old and new paths contain only automatically generated catalog metadata.
 
 ## D-023 — Tool-neutral Git workflow
 

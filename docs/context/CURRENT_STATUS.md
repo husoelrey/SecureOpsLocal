@@ -7,7 +7,7 @@ This document records verified reality. Never describe planned work as complete.
 ## Repository
 
 - Path: C:\Users\husoelrey\Documents\Projects\SecureOpsLocal
-- Branch: feature/p1-runtime-readiness
+- Branch: feature/p1-runtime-storage
 - Application code: not created
 - Python project and dependencies: not created
 - Database schema and migrations: not created
@@ -29,13 +29,23 @@ This document records verified reality. Never describe planned work as complete.
   CLI path and Ubuntu WSL 2 integration; bare `docker` is absent from the current
   Windows `PATH`
 - WSL 2.3.26.0 is available; Ubuntu and `docker-desktop` are running as WSL 2
-- Ollama 0.32.6 is healthy at `http://127.0.0.1:11434/api`; its default cache exists
-  and contains no files
-- Foundry Local CLI 0.10.2 is installed, but its daemon is not running and no endpoint
-  is available; its default cache directory does not exist
+- Ollama 0.32.6 is healthy at `http://127.0.0.1:11434/api`; its effective model path
+  is the empty external directory
+  `C:\Users\husoelrey\Documents\docs\AI_models\ollama`
+- The old Ollama default cache still exists and contains no files; no data was moved
+  or deleted during configuration
+- Foundry Local CLI 0.10.2 daemon is running and reports `ready`; after its controlled
+  cache-change restart, this run uses dynamic endpoint `http://127.0.0.1:39251` from
+  `foundrylocald` PID `26768`
+- Foundry's effective, user-set cache is
+  `C:\Users\husoelrey\Documents\docs\AI_models\foundry`
+- Foundry startup generated catalog metadata JSON in both the old and new cache
+  locations, but no model-weight or execution-provider payload; the daemon reports
+  zero locally cached models and the execution-provider directory is empty
 - Installed Foundry CLI uses `foundry server status`; current Microsoft guidance still
   documents the rejected `foundry service status` form
-- External model root exists and is empty:
+- External model root exists; its `ollama` and `foundry` children are the effective
+  runtime paths and contain no model payloads:
   C:\Users\husoelrey\Documents\docs\AI_models
 - A previous interrupted Ollama download was removed from the cache; no matching
   partial model files remain in the checked locations
@@ -62,7 +72,7 @@ This document records verified reality. Never describe planned work as complete.
 | Phase | Status | Evidence |
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
-| P1 — Local runtime and model profiles | In progress | Runtime versions and health inventoried; Foundry daemon and all model profiles remain unverified |
+| P1 — Local runtime and model profiles | In progress | Runtime health and external model storage verified; all deployment profiles remain unverified |
 | P2 — Deterministic SSH analysis core | Not started | No application code |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
@@ -72,14 +82,16 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue P1 with a bounded Foundry daemon and endpoint verification:
+Continue P1 with one bounded Foundation-Sec acquisition task:
 
-1. Start the Foundry daemon deliberately without listing or downloading models.
-2. Record the dynamic loopback endpoint and repeat service-health checks.
-3. Reconfirm that no catalog, execution-provider, or model artifact was populated.
+1. Re-verify the official repository, exact Q4_K_M GGUF filename, license, and
+   published digest before downloading.
+2. Download only that GGUF beneath the approved external root and compute its local
+   SHA-256.
+3. Record source, license, expected digest, local digest, size, and storage path.
 
-Do not list the Foundry catalog, change cache configuration, download execution
-providers, acquire models, or run inference during this task.
+Do not import the GGUF into Ollama, pull Qwen, list the Foundry catalog, run inference,
+or begin benchmarking in that bounded task.
 
 ## Open decisions
 

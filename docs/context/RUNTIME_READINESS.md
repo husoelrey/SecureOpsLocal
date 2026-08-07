@@ -2,17 +2,17 @@
 
 Last verified: **2026-08-07**
 
-This file records read-only readiness evidence for the local runtimes used by
-SecureOps Local. Installation, upgrade, model acquisition, cache population, and
-inference are outside this inventory task.
+This file records readiness evidence for the local runtimes used by SecureOps Local.
+Installation, upgrade, model acquisition, model-cache population, and inference are
+outside this prerequisite work.
 
 ## Inventory summary
 
 | Runtime | Version | Verified endpoint | State |
 |---|---|---|---|
 | Docker Desktop | Desktop 4.85.0; Engine/CLI 29.6.2 | `npipe:////./pipe/dockerDesktopLinuxEngine` | Engine healthy; Windows `PATH` limitation |
-| Ollama | CLI/API 0.32.6 | `http://127.0.0.1:11434/api` | Healthy; default model cache empty |
-| Foundry Local | CLI 0.10.2 | Unavailable while daemon is stopped | Not ready; default cache directory absent |
+| Ollama | CLI/API 0.32.6 | `http://127.0.0.1:11434/api` | Healthy; external model cache configured and empty |
+| Foundry Local | CLI 0.10.2 | Dynamic `http://127.0.0.1:39251` for current run | Daemon ready; external cache configured; no model or execution-provider payloads |
 
 Versions, endpoints, and state in this table are derived from the commands and exact
 outputs in the runtime-specific sections below. No model response was requested or
@@ -138,9 +138,9 @@ path resolution is a developer-shell limitation rather than an engine failure.
 ### Result
 
 Ollama CLI `0.32.6` is installed and available on the Windows `PATH`. Its local
-process and loopback API are healthy. The effective default model cache exists but is
-empty; this inventory did not list models through the API, acquire artifacts, or run
-inference.
+process and loopback API are healthy. Its model cache is configured at the approved
+external path and both that path and the old default contain no files. This work did
+not list models through the API, acquire artifacts, or run inference.
 
 The endpoint and cache interpretation follow the official
 [Ollama API version endpoint](https://docs.ollama.com/api-reference/get-version) and
@@ -178,9 +178,9 @@ exit code `0` by the inventory wrapper.
 
 Observed state:
 
-- `ollama.exe` process ID: `29060`
-- `ollama app.exe` process ID: `3980`
-- Listener: `127.0.0.1:11434`, owned by process `29060`
+- `ollama.exe` process ID: `30072`
+- `ollama app.exe` process ID: `11224`
+- Listener: `127.0.0.1:11434`, owned by process `30072`
 - Local API base URL: `http://127.0.0.1:11434/api`
 - Version response: `{"version":"0.32.6"}`
 
@@ -188,29 +188,80 @@ The matching CLI and API versions plus the loopback listener verify local servic
 health. Process IDs are observations from this run and are expected to change after a
 restart.
 
-### Model-cache configuration
+### External model-cache configuration
 
-Commands:
+The current primary [Ollama FAQ](https://docs.ollama.com/faq) and
+[Ollama for Windows](https://docs.ollama.com/windows) guidance checked on
+2026-08-07 identifies the `OLLAMA_MODELS` environment variable as the supported way
+to move model storage on Windows. It instructs users to quit the running application,
+set the user environment variable, and relaunch Ollama.
+
+Before the change, the old cache existed with only empty `blobs` and `manifests`
+directories. The approved external root was empty, the `ollama` child did not exist,
+and `OLLAMA_MODELS` was unset at process, user, and machine scopes.
+
+Configuration commands:
 
 ```powershell
-[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'Process')
+$newCache = 'C:\Users\husoelrey\Documents\docs\AI_models\ollama'
+New-Item -ItemType Directory -Path $newCache
+[Environment]::SetEnvironmentVariable('OLLAMA_MODELS', $newCache, 'User')
 [Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'User')
-[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'Machine')
+```
+
+The wrapper validated that the normalized child path remained below
+`C:\Users\husoelrey\Documents\docs\AI_models` before creating it. Exit code: `0`.
+The persistent user-scope value returned exactly:
+
+```text
+C:\Users\husoelrey\Documents\docs\AI_models\ollama
+```
+
+Only the installed Ollama processes were restarted. Their executable paths were
+validated before stopping them:
+
+```powershell
+Stop-Process -Id 29060,3980
+$env:OLLAMA_MODELS = [Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'User')
+Start-Process -FilePath 'C:\Users\husoelrey\AppData\Local\Programs\Ollama\ollama app.exe' -WindowStyle Hidden
+```
+
+Each command exited `0`. Explicitly copying the persisted value into the launch
+environment ensures that the relaunched application and its `ollama.exe serve` child
+received the same effective model path without depending on an existing desktop
+process to refresh its environment block.
+
+Post-restart evidence:
+
+- `ollama app.exe`: PID `11224`, started
+  `2026-08-07T12:15:04.5289748+03:00`
+- `ollama.exe serve`: PID `30072`, started
+  `2026-08-07T12:15:06.7363343+03:00`
+- Listener: `127.0.0.1:11434`, owned by PID `30072`
+- API response: `{"version":"0.32.6"}`
+- Persisted and launch-environment model path:
+  `C:\Users\husoelrey\Documents\docs\AI_models\ollama`
+
+Verification commands:
+
+```powershell
+[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'User')
 Get-ChildItem -LiteralPath 'C:\Users\husoelrey\.ollama\models' -Recurse -Force -File
+Get-ChildItem -LiteralPath 'C:\Users\husoelrey\Documents\docs\AI_models\ollama' -Recurse -Force -File
+Get-CimInstance Win32_Process -Filter "Name='ollama.exe' OR Name='ollama app.exe'"
+Get-NetTCPConnection -LocalPort 11434 -State Listen
+Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:11434/api/version' -TimeoutSec 5
 ```
 
 Observed state:
 
-- `OLLAMA_MODELS` was unset at process, user, and machine scopes.
-- Effective documented Windows default: `C:\Users\husoelrey\.ollama\models`
-- Cache directory exists: yes
-- Cached files: `0`
-- Cached bytes: `0`
-
-No file was created, moved, deleted, or downloaded. The project-managed external
-model root at `C:\Users\husoelrey\Documents\docs\AI_models` is not yet configured as
-Ollama's effective cache; changing that configuration is later P1 work and requires
-runtime-supported-path verification first.
+- Effective external cache exists: yes
+- External cache files: `0`
+- External cache bytes: `0`
+- Old default cache files: `0`
+- Old default cache bytes: `0`
+- No existing artifact was moved or deleted
+- No model-list, pull, create, import, or inference command was run
 
 ### Failure and fallback implications
 
@@ -224,19 +275,20 @@ the verified loopback endpoint if container-to-host access is unavailable.
 
 ### Result
 
-Foundry Local CLI `0.10.2` is installed and available on the Windows `PATH`, but its
-local daemon is not running. No local endpoint URL or service process could therefore
-be verified. The configured default cache path is reported by the CLI, but the cache
-directory does not exist and contains no artifacts.
+Foundry Local CLI `0.10.2` is installed and available on the Windows `PATH`. Its
+daemon was deliberately started with the installed CLI and reached the CLI-reported
+`ready` state. After external-cache configuration, the current run exposes dynamic
+loopback endpoint `http://127.0.0.1:39251` from process `foundrylocald` PID `26768`.
+Both values are ephemeral and must be discovered again after a restart.
 
 The current primary reference checked on 2026-08-07 was Microsoft's
 [Foundry Local CLI guidance](https://learn.microsoft.com/en-us/azure/foundry-local/how-to/how-to-use-foundry-local-cli).
 That page describes `foundry service status` and warns that a first
 `foundry model list` can download execution providers. The installed CLI behaves
 differently: its built-in help exposes the daemon group as `foundry server` and
-rejects `foundry service`. For this inventory, installed `--help` output is treated as
-the executable contract and the documentation difference is retained as a
-limitation, not silently corrected.
+rejects `foundry service`. The installed `--help` output was therefore treated as
+the executable contract. No model-list, model-download, load, or inference command
+was run.
 
 ### CLI version and command surface
 
@@ -260,9 +312,47 @@ Observed state:
 - Read-only daemon check: `foundry server status`
 - Read-only cache-location check: `foundry cache location`
 
-### Service health and endpoint
+### Initial daemon startup, health, and endpoint
 
-Command:
+Before startup, these commands established the baseline:
+
+```powershell
+foundry server status --output json
+foundry cache location --output json
+foundry config show --output json
+Test-Path -LiteralPath 'C:\Users\husoelrey\.foundry\cache'
+Test-Path -LiteralPath 'C:\Users\husoelrey\Documents\docs\AI_models'
+# For each existing path:
+Get-ChildItem -LiteralPath <path> -Recurse -Force -File
+Get-ChildItem -LiteralPath <path> -Recurse -Force -Directory
+```
+
+Each CLI command exited `0`; both filesystem inspections completed successfully.
+The exact status and cache-location outputs were:
+
+```json
+{"running":false,"state":"not_running"}
+{"path":"C:\\Users\\husoelrey\\.foundry\\cache\\models","userSet":false}
+```
+
+The default Foundry cache did not exist. The approved external root existed and was
+empty: `0` files, `0` bytes, and no child directories.
+
+Startup command:
+
+```powershell
+foundry server start --output json
+```
+
+Exit code: `0`.
+
+Exact output:
+
+```json
+{"running":true,"webUrls":["http://127.0.0.1:48077"],"port":48077}
+```
+
+Readiness command:
 
 ```powershell
 foundry server status --output json
@@ -273,12 +363,20 @@ Exit code: `0`.
 Exact output:
 
 ```json
-{"running":false,"state":"not_running"}
+{"running":true,"state":"ready","pid":23948,"webUrls":["http://127.0.0.1:48077"],"startedAt":"2026-08-07T09:08:14.8675625+00:00","uptime":"0s","logFile":""}
 ```
 
-Additional read-only process and Windows-service checks found no process or registered
-Windows service with `foundry` in its name. Because the daemon is stopped, there is no
-active PID, uptime, listener, or endpoint URL to record.
+`Get-Process -Id 23948` resolved the reported PID to `foundrylocald`, with process
+start time `2026-08-07T12:08:13.4033438+03:00`. A `TcpClient` connection to
+`127.0.0.1:48077` succeeded. These checks establish that the reported process owned
+a reachable dynamic loopback listener while the installed CLI reported the daemon
+`ready`.
+
+The installed preview server does not expose a dedicated HTTP health route documented
+for this command surface. Probes to `/health` and to the older `/openai/status` route
+both reached the listener but returned HTTP `404`. Consequently, the successful
+`foundry server status` `ready` result is the health authority for this CLI version;
+an HTTP `200` health endpoint is not claimed.
 
 Command:
 
@@ -296,11 +394,10 @@ captured JSON:
 ]
 ```
 
-The port is automatic and the daemon is not running, so a concrete configured local
-endpoint cannot be claimed. Starting or restarting the daemon would change external
-runtime state and was intentionally not performed for this read-only inventory.
+The automatic port setting agrees with the observed dynamic endpoint. The specific
+port must not be hard-coded into application configuration.
 
-### Model-cache configuration
+### Initial default model-cache observation
 
 Command:
 
@@ -316,17 +413,111 @@ Exact output:
 {"path":"C:\\Users\\husoelrey\\.foundry\\cache\\models","userSet":false}
 ```
 
-Filesystem inspection result:
+Post-start filesystem and daemon-log inspection found:
 
 - Effective cache: `C:\Users\husoelrey\.foundry\cache\models`
 - User override: no
-- Cache directory exists: no
-- Cached files: `0`
-- Cached bytes: `0`
+- Locally cached models reported by the daemon: `0`
+- Execution-provider directory: `C:\Users\husoelrey\.foundry\ep`
+- Execution-provider files: `0`
+- Model or execution-provider binary payloads: `0`
+- External model root files: `0`
+- Generated metadata index:
+  `C:\Users\husoelrey\.foundry\cache\models\foundry.modelinfo.json`,
+  `79,275` bytes, SHA-256
+  `D06C700AA5CC62B481ADA4F606048900A050642A08D54D97C4C303C9397749A1`
 
-No cache directory or artifact was created. In particular, `foundry model list`,
-`foundry model run`, model download commands, and cache-changing commands were not
-executed because they can populate or alter runtime state.
+The post-start evidence commands were:
+
+```powershell
+Get-ChildItem -LiteralPath 'C:\Users\husoelrey\.foundry' -Recurse -Force
+Get-FileHash -LiteralPath 'C:\Users\husoelrey\.foundry\cache\models\foundry.modelinfo.json' -Algorithm SHA256
+foundry server logs -n 50
+```
+
+Each command exited `0`. Daemon startup automatically contacted the Azure Foundry
+catalog and wrote the JSON metadata index even though no catalog-list command was
+issued. It also attempted automatic execution-provider registration, which failed
+immediately because the generated request contained unknown provider names. The
+daemon log then reported `0` locally cached models; the execution-provider directory
+remained empty. This
+means no model weights or execution-provider payloads were acquired, but daemon
+startup is not network-silent and is not by itself proof of air-gapped readiness.
+
+### External Foundry cache configuration
+
+The current Microsoft CLI guidance and the installed `foundry cache cd --help`
+identify `foundry cache cd <path>` as the supported cache-location command. The
+approved child path was normalized and confirmed to remain below the external model
+root before it was created:
+
+```powershell
+New-Item -ItemType Directory -Path 'C:\Users\husoelrey\Documents\docs\AI_models\foundry'
+foundry cache cd 'C:\Users\husoelrey\Documents\docs\AI_models\foundry' --force --output json
+```
+
+Both commands exited `0`. Exact CLI output:
+
+```json
+{"success":true,"message":"Cache directory set to 'C:\\Users\\husoelrey\\Documents\\docs\\AI_models\\foundry'."}
+```
+
+The cache command stopped the running daemon rather than restarting it. This was
+verified immediately with `foundry server status --output json`, which exited `0`
+and returned:
+
+```json
+{"running":false,"state":"not_running"}
+```
+
+Effective-location commands:
+
+```powershell
+foundry cache location --output json
+foundry config show --output json
+```
+
+Both exited `0`. The relevant exact outputs were:
+
+```json
+{"path":"C:\\Users\\husoelrey\\Documents\\docs\\AI_models\\foundry","userSet":true}
+{"key":"cache-directory","value":"C:\\Users\\husoelrey\\Documents\\docs\\AI_models\\foundry","userSet":true}
+```
+
+Because daemon health was part of the acceptance evidence, it was then started once:
+
+```powershell
+foundry server start --output json
+foundry server status --output json
+```
+
+Both exited `0`. Exact outputs:
+
+```json
+{"running":true,"webUrls":["http://127.0.0.1:39251"],"port":39251}
+{"running":true,"state":"ready","pid":26768,"webUrls":["http://127.0.0.1:39251"],"startedAt":"2026-08-07T09:18:26.6610314+00:00","uptime":"0s","logFile":"C:\\Users\\husoelrey\\.foundry\\logs\\foundrylocald-2026-08-07.log"}
+```
+
+`Get-Process -Id 26768` resolved to `foundrylocald`, and a `TcpClient` connection to
+`127.0.0.1:39251` succeeded. Daemon logs explicitly reported the configured
+`--cache-directory` value, `0` locally cached models, and the same failed automatic
+execution-provider registration described above.
+
+Post-restart storage evidence:
+
+- Effective external Foundry cache: one automatically generated
+  `foundry.modelinfo.json` metadata index, `79,275` bytes
+- External metadata SHA-256:
+  `2C7DF16ABD1931FB617A063985B8569EEDCE6CD2FA2B8E4231CDAE76623FE85B`
+- Old default cache: its original metadata index remains unchanged, `79,275` bytes,
+  SHA-256 `D06C700AA5CC62B481ADA4F606048900A050642A08D54D97C4C303C9397749A1`
+- Model-weight or other model payload files across both paths: `0`
+- Execution-provider files in `C:\Users\husoelrey\.foundry\ep`: `0`
+- Existing files moved or deleted: `0`
+
+No catalog-list, model-download, model-load, inference, or benchmark command was run.
+As with the first startup, daemon initialization itself refreshed catalog metadata;
+the Foundry cache is therefore empty of model payloads, not literally file-empty.
 
 ### Failures and minimum reproduction
 
@@ -346,28 +537,40 @@ Unrecognized command or argument 'service'.
 Hint: Run 'foundry --help' to see usage.
 ```
 
-Minimum service-state reproduction:
+Minimum current-state reproduction:
 
 ```powershell
 foundry server status --output json
 ```
 
-Current result: `{"running":false,"state":"not_running"}`.
+Current result: daemon running with state `ready` and an externally configured cache.
+The endpoint and PID are dynamic, so the JSON output must be read rather than copied
+from this record.
 
-Fallback implication: Foundry Local is not currently ready for provider requests.
-The daemon must be deliberately started in a later bounded P1 task before its dynamic
-loopback endpoint and connectivity can be verified. Until then, no Foundry profile
-may be marked available; the verified Ollama loopback service is the only healthy
-local model runtime endpoint, and native Windows FastAPI remains the deployment
-fallback if Docker bridging is unsuitable.
+Fallback implication: daemon readiness does not make a Foundry deployment profile
+available. No model or execution provider has been selected, downloaded, loaded, or
+tested. Native Windows FastAPI remains the deployment fallback if later Docker bridge
+verification is unsuitable.
 
 ## Inventory conclusion
 
-The bounded runtime-readiness checklist item is complete because installation,
-version, service state, endpoint availability, and cache state were observed for all
-three required runtimes. Completion of the inventory does not mean all runtimes are
-healthy: Docker and Ollama are healthy, while Foundry Local remains unavailable until
-its daemon is deliberately started and its dynamic endpoint is verified.
+The bounded runtime-readiness inventory and Foundry daemon-readiness prerequisite are
+complete. Docker, Ollama, and the Foundry daemon are healthy on their verified local
+surfaces, but no Foundry deployment profile exists and container-to-host connectivity
+is still unverified.
 
-The next safe P1 feature is Foundry daemon and endpoint verification without catalog,
-execution-provider, cache-configuration, model-download, or inference operations.
+Final storage state:
+
+| Runtime | Supported setting | Effective external path | Previous path state | Effective path state |
+|---|---|---|---|---|
+| Ollama | User-scope `OLLAMA_MODELS` | `C:\Users\husoelrey\Documents\docs\AI_models\ollama` | Default cache: `0` files, `0` bytes | `0` files, `0` bytes |
+| Foundry Local | `foundry cache cd`; `userSet:true` | `C:\Users\husoelrey\Documents\docs\AI_models\foundry` | One unchanged `foundry.modelinfo.json`; no model payload | One generated `foundry.modelinfo.json`; no model or EP payload |
+
+Both effective paths are children of the approved external root. The Ollama cache is
+literally empty. Foundry's effective cache is empty of model and execution-provider
+payloads but contains the automatically generated catalog metadata index documented
+above. No runtime artifact exists inside the repository.
+
+The next safe bounded P1 task is to acquire and hash the Foundation-Sec GGUF under
+the approved external root, after re-verifying its official source, exact filename,
+license, and expected digest. That task must not import, run, or benchmark the model.
