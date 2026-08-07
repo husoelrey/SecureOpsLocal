@@ -120,3 +120,90 @@ Fallback implication: use the verified absolute CLI path shown above or the inte
 Ubuntu WSL CLI until Windows `PATH` configuration is deliberately addressed. The
 engine itself is healthy, so native Windows application fallback remains viable; CLI
 path resolution is a developer-shell limitation rather than an engine failure.
+
+## Ollama
+
+### Result
+
+Ollama CLI `0.32.6` is installed and available on the Windows `PATH`. Its local
+process and loopback API are healthy. The effective default model cache exists but is
+empty; this inventory did not list models through the API, acquire artifacts, or run
+inference.
+
+The endpoint and cache interpretation follow the official
+[Ollama API version endpoint](https://docs.ollama.com/api-reference/get-version) and
+[Ollama for Windows](https://docs.ollama.com/windows) documentation checked on
+2026-08-07.
+
+### CLI version
+
+Commands:
+
+```powershell
+Get-Command ollama
+ollama --version
+```
+
+Both commands succeeded; `ollama --version` exited `0`.
+
+Observed state:
+
+- Executable: `C:\Users\husoelrey\AppData\Local\Programs\Ollama\ollama.exe`
+- CLI version: `0.32.6`
+
+### Process, endpoint, and API health
+
+Commands:
+
+```powershell
+Get-Process -Name 'ollama','ollama app'
+Get-NetTCPConnection -LocalPort 11434 -State Listen
+Invoke-RestMethod -Method Get -Uri 'http://127.0.0.1:11434/api/version' -TimeoutSec 5
+```
+
+Each check succeeded. The HTTP request returned a successful response, recorded as
+exit code `0` by the inventory wrapper.
+
+Observed state:
+
+- `ollama.exe` process ID: `29060`
+- `ollama app.exe` process ID: `3980`
+- Listener: `127.0.0.1:11434`, owned by process `29060`
+- Local API base URL: `http://127.0.0.1:11434/api`
+- Version response: `{"version":"0.32.6"}`
+
+The matching CLI and API versions plus the loopback listener verify local service
+health. Process IDs are observations from this run and are expected to change after a
+restart.
+
+### Model-cache configuration
+
+Commands:
+
+```powershell
+[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'Process')
+[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'User')
+[Environment]::GetEnvironmentVariable('OLLAMA_MODELS', 'Machine')
+Get-ChildItem -LiteralPath 'C:\Users\husoelrey\.ollama\models' -Recurse -Force -File
+```
+
+Observed state:
+
+- `OLLAMA_MODELS` was unset at process, user, and machine scopes.
+- Effective documented Windows default: `C:\Users\husoelrey\.ollama\models`
+- Cache directory exists: yes
+- Cached files: `0`
+- Cached bytes: `0`
+
+No file was created, moved, deleted, or downloaded. The project-managed external
+model root at `C:\Users\husoelrey\Documents\docs\AI_models` is not yet configured as
+Ollama's effective cache; changing that configuration is later P1 work and requires
+runtime-supported-path verification first.
+
+### Failure and fallback implications
+
+No Ollama readiness command failed. The service binds only to Windows loopback in the
+observed state, which is safe for local use but does not prove reachability from a
+Docker container. `host.docker.internal:11434` connectivity and any required trusted
+host-binding change remain a later, explicit P1 test. Native Windows FastAPI can use
+the verified loopback endpoint if container-to-host access is unavailable.
