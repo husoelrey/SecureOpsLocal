@@ -1,352 +1,215 @@
 # SecureOps Local — Project Specification
 
-## 1. Proje adı
+## 1. Product definition
 
-**SecureOps Local: Air-Gapped-Ready Incident Response Assistant with Multi-Runtime Local LLM Evaluation**
+SecureOps Local is an air-gapped-ready incident review assistant for Linux SSH authentication logs. It keeps sensitive inputs on the local machine, derives factual findings with deterministic Python code, retrieves supporting security guidance from a local knowledge base, and asks a local language model to produce a cautious structured assessment.
 
-Kısa ad: **SecureOps Local**
+The product also compares local deployment profiles across Microsoft Foundry Local and Ollama. It is a decision-support prototype, not an autonomous security control.
 
-## 2. Arka plan
+## 2. Problem
 
-Proje, Microsoft Türkiye AI Innovators çevrimiçi staj programı bağlamında geliştirilmektedir. Programın örnek projesi, Microsoft Foundry Local kullanan bir aylık Local RAG asistanıdır:
+Authentication logs can contain IP addresses, account names, host details, authentication methods, and incident timelines. Sending this material to a cloud model may conflict with privacy requirements or organizational policy. Small teams also need a repeatable way to turn raw logs into an initial review without presenting model speculation as fact.
 
-- [Building Your First Local RAG Application with Foundry Local](https://techcommunity.microsoft.com/blog/azuredevcommunityblog/building-your-first-local-rag-application-with-foundry-local/4501968)
+SecureOps Local addresses this need through a fully local analysis pipeline with explicit boundaries between deterministic evidence and model interpretation.
 
-SecureOps Local, örneği farklı PDF’lerle tekrar etmeyecektir. Genel amaçlı chatbot yerine gerçek güvenlik girdisi işler, deterministik parser kullanır, kaynaklı incident-review raporu üretir ve iki yerel inference runtime profilini karşılaştırır.
+## 3. Target users
 
-Program açısından Foundry Local kullanmak değerlidir fakat ürün Foundry’ye kilitlenmeyecektir. Ortaya güçlü ve açıklanabilir bir proje çıkarmak, tek vendor teknolojisine bağlı kalmaktan daha önemlidir.
+- Junior SOC analysts
+- System administrators
+- Security students
+- Small technical teams performing initial incident review
+- Developers evaluating local RAG and local inference runtimes
 
-## 3. Problem tanımı
+## 4. Product boundary
 
-SSH/authentication logları aşağıdaki hassas bilgileri içerebilir:
+The product is:
 
-- İç veya dış IP adresleri
-- Kullanıcı adları
-- Sunucu isimleri
-- Authentication yöntemi
-- Servis ve sistem davranışı
-- Olası olay zaman çizelgesi
+- An initial incident-review assistant
+- A log summarization and evidence-structuring tool
+- A document-grounded decision-support prototype
+- A local deployment-profile evaluation platform
 
-Bu bilgilerin cloud LLM’e gönderilmesi gizlilik, uyumluluk veya kurum politikası açısından istenmeyebilir. Küçük ekipler ve junior analistler ise ham loglardan hızlı bir ilk inceleme çıkarmakta zorlanabilir.
+The product is not:
 
-SecureOps Local şu ihtiyacı karşılar:
+- A SIEM, IDS, IPS, antivirus, or forensic platform
+- An automated remediation or attack-prevention system
+- A multi-user production SaaS
+- A source of guaranteed attribution or compromise determination
 
-> Ham güvenlik loglarını cihaz dışına çıkarmadan deterministik olarak özetleyen, güvenilir yerel dokümanlardan ilgili bölümleri bulan ve temkinli bir ilk inceleme raporu oluşturan yerel karar destek aracı.
+## 5. Primary workflow
 
-## 4. Hedef kullanıcılar
+1. A user submits an SSH authentication log through the API.
+2. Upload controls validate size, type, encoding, and content.
+3. SSHAuthLogParser converts supported lines into normalized events.
+4. Deterministic aggregation produces statistics, findings, warnings, and limitations.
+5. The application creates a privacy-minimized retrieval query.
+6. The local retriever returns a fixed top-k evidence package.
+7. The selected local model profile receives parser facts and the same retrieved context.
+8. The model returns a structured assessment.
+9. Strict Pydantic validation and deterministic consistency checks accept or reject the output.
+10. Safe metadata and a valid report are stored in SQLite. Raw logs are not retained by default.
 
-### Birincil
+## 6. Deterministic parser outputs
 
-- Junior SOC analisti
-- Sistem yöneticisi
-- Siber güvenlik öğrencisi
-- Küçük ekipte ilk incelemeyi yapan teknik personel
+The MVP parser must calculate:
 
-### İkincil
+- Relevant, successful, failed, and unparsed event counts
+- Unique and most active source addresses
+- Targeted user accounts and privileged-account attempts
+- First and last known event times
+- Repeated attempts within a configurable window
+- Invalid-user attempts
+- Authentication methods
+- Success-after-repeated-failure patterns
+- Timestamp, year, timezone, and parsing limitations
 
-- Yerel LLM ve RAG sistemlerini değerlendiren geliştirici
-- Air-gapped-ready deployment yaklaşımını inceleyen ekip
+Parser findings describe observable patterns and never assert an attack.
 
-## 5. Ürün konumlandırması
+## 7. Report contract
 
-Ürün şunlardan biridir:
+IncidentReport contains:
 
-- İlk olay inceleme yardımcısı
-- Log özetleme ve kanıt yapılandırma aracı
-- Doküman destekli karar destek prototipi
-- Yerel LLM deployment profile evaluation platformu
+- incident_id
+- status
+- summary
+- observed_findings
+- possible_interpretations
+- risk_level
+- risk_reasoning
+- recommended_actions
+- citations
+- limitations
+- parser_statistics
+- model_information
+- performance_metrics
 
-Ürün şunlardan biri değildir:
+Observed findings are generated or verified by deterministic components. Model-generated interpretation is kept in separate fields. Risk levels are low, medium, or high and must include evidence-based reasoning. Recommendations are limited to review, evidence preservation, validation, hardening, monitoring, and authorized escalation.
 
-- SIEM
-- IDS/IPS
-- Antivirüs
-- SOC otomasyon platformu
-- Otomatik saldırı engelleme sistemi
-- Forensic doğruluk garantisi veren ürün
-- Üretim sınıfı çok kullanıcılı SaaS
+## 8. Runtime and model scope
 
-## 6. Ana kullanıcı akışı
+The MVP supports equal provider implementations for:
 
-1. Kullanıcı Swagger UI veya API üzerinden SSH/authentication logu yükler.
-2. Dosya boyut, uzantı, MIME, içerik ve güvenli işleme kontrollerinden geçer.
-3. Uygun parser seçilir.
-4. Parser olayları ve deterministik istatistikleri çıkarır.
-5. Bulgulardan hassas veriyi gereksiz yere taşımayan retrieval sorgusu oluşturulur.
-6. Yerel bilgi tabanından ilgili document chunk’ları getirilir.
-7. Parser bulguları, sınırlı/maskelenmiş evidence ve aynı retrieved context seçilen yerel LLM provider’ına verilir.
-8. Model yapılandırılmış JSON raporu üretir.
-9. Çıktı Pydantic ile doğrulanır.
-10. Geçerli sonuç ve gerekli metadata SQLite’a kaydedilir.
-11. Kullanıcı job durumu ve raporu API üzerinden görür.
+- Microsoft Foundry Local, with the concrete device-supported profile selected after catalog inspection
+- Ollama with Foundation-Sec-8B-Reasoning Q4_K_M as the security-specialized candidate
+- Ollama with Qwen3.5 9B Q4_K_M as the general-purpose reference
 
-## 7. Deterministik parser çıktıları
+All three candidates remain eligible to become the recommended deployment profile. Availability, licensing, hardware fit, runtime behavior, structured-output reliability, quality, latency, and memory usage must be measured before a default is selected.
 
-MVP parser aşağıdakileri hesaplamalıdır:
+## 9. Knowledge and retrieval scope
 
-- Toplam ilgili olay sayısı
-- Başarısız giriş sayısı
-- Başarılı giriş sayısı
-- Benzersiz kaynak IP sayısı ve listesi
-- En aktif kaynak IP ve olay sayısı
-- Hedef kullanıcı hesapları
-- Root/privileged hesap denemeleri
-- İlk ve son olay zamanı
-- Analiz zaman aralığı
-- Kısa sürede tekrar eden giriş denemeleri
-- Geçersiz kullanıcı girişimleri
-- Authentication yöntemleri
-- Çok sayıda başarısızlıktan sonra başarılı giriş örüntüsü
-- Parse edilemeyen satır sayısı
-- Timestamp/timezone sınırlamaları
+The first knowledge base contains five to ten reviewed sources from organizations such as NIST, CISA, MITRE ATT&CK, OWASP, Microsoft, and authoritative SSH documentation.
 
-Parser temel gerçeklere saldırı etiketi eklemez. Örneğin `repeated_authentication_attempts=true` bir saldırı hükmü değildir.
+MVP retrieval includes:
 
-## 8. Incident report response modeli
-
-Üst düzey alanlar:
-
-- `incident_id`
-- `status`
-- `summary`
-- `observed_findings`
-- `possible_interpretations`
-- `risk_level`
-- `risk_reasoning`
-- `recommended_actions`
-- `citations`
-- `limitations`
-- `parser_statistics`
-- `model_information`
-- `performance_metrics`
-
-### Observed findings
-
-- Yalnızca log/parser tarafından doğrulanmış gerçekler
-- Her finding için tür, ifade, yapılandırılmış değer ve evidence reference
-- Yorum veya saldırı atfı içermez
-
-### Possible interpretations
-
-- Kesinlik iddiası taşımaz
-- Kanıtlarla uyumlu olası açıklamalar verir
-- Alternatif benign açıklamaları dışlamaz
-- İlgili citation’lara bağlanır
-
-### Risk level
-
-- `low`, `medium`, `high`
-- “Critical” MVP’de yoktur; örnek logdan kesin kurum etkisi çıkarılamaz
-- Gerekçe gözlenen gerçeklere dayanır
-- Risk, saldırı kesinliği anlamına gelmez
-
-### Recommended actions
-
-İzin verilen kategoriler:
-
-- Daha fazla log ve zaman çizelgesi inceleme
-- Authentication kaynağını doğrulama
-- İlgili hesap sahibini veya sistem sahibini doğrulama
-- Log bütünlüğünü ve retention’ı koruma
-- SSH hardening değerlendirmesi
-- MFA/key-based authentication değerlendirmesi
-- Yetkili kurum prosedürüne göre escalation
-- İlgili host ve komşu sistem loglarını korele etme
-
-Yasak davranışlar:
-
-- Otomatik engelleme
-- Otomatik hesap kapatma
-- Komut çalıştırma
-- Aktif tarama veya exploitation
-- Credential deneme
-
-## 9. Runtime ve model kapsamı
-
-MVP iki provider içerir:
-
-### Foundry Local
-
-- Windows host üzerinde çalışır.
-- Uygun WinML/execution provider hızlandırmasını kullanması hedeflenir.
-- Model kataloğu ve model alias’ları uygulama sırasında cihazda doğrulanır.
-- REST veya native SDK entegrasyon yolu spike sonucu seçilir.
-
-### Ollama
-
-- Windows host üzerinde çalışır.
-- OpenAI-compatible endpoint üzerinden erişilir.
-- İlk model adayı Qwen3 8B 4-bit’tir.
-- Donanım veya latency uygun değilse Qwen3 4B fallback’tir.
-
-Ürünün varsayılan provider/model profili ölçümden önce belirlenmez.
-
-## 10. RAG kapsamı
-
-İlk bilgi tabanı yaklaşık 5–10 kaynak içerir:
-
-- NIST incident response
-- CISA incident response
-- MITRE ATT&CK brute-force/credential access ve savunma bilgileri
-- OWASP logging rehberleri
-- Microsoft güvenlik dokümanları
-- SSH authentication monitoring/hardening kaynakları
-
-MVP retrieval:
-
-- PDF, Markdown ve plain text ingestion
-- Başlık/bölüm koruyan chunking
-- Chunk overlap
-- SQLite metadata
-- TF-IDF + cosine similarity
-- Top-k citation
-
-Opsiyonel:
-
-- Yerel embedding modeli
-- NumPy cosine similarity
-- TF-IDF/embedding karşılaştırması
-
-## 11. API kapsamı
-
-Planlanan endpoint’ler:
-
-- `GET /health`
-- `GET /models`
-- `POST /v1/knowledge/ingest`
-- `GET /v1/knowledge/sources`
-- `POST /v1/incidents/analyze`
-- `GET /v1/incidents/{incident_id}`
-- `POST /v1/benchmarks/run`
-- `GET /v1/benchmarks/{benchmark_id}`
-
-Analyze ve benchmark uzun sürebileceğinden job tabanlı yürür. POST `202 Accepted`, GET durum/sonuç döndürür.
-
-## 12. Veritabanı kapsamı
-
-Planlanan tablolar:
-
-- `documents`
-- `document_chunks`
-- `incidents`
-- `incident_findings`
-- `model_runs`
-- `benchmark_runs`
-- `benchmark_results`
-
-Ham log varsayılan olarak saklanmaz. Dosya hash’i, boyut, parser metadata’sı ve gerektiğinde maskelenmiş kısa evidence tutulabilir.
-
-## 13. Benchmark amacı
-
-Amaç:
-
-> Bu cihazda ve tamamen yerel kullanımda hangi deployment profilinin güvenlik raporu kalitesi, hız ve bellek açısından en uygun dengeyi sunduğunu ölçmek.
-
-Karşılaştırma profilleri en az:
-
-- Bir Foundry Local model profili
-- Bir Ollama model profili
-
-Metrikler:
-
-- Load time
-- Time to first token
-- Total response time
-- Tokens/second
-- Peak/average RAM
-- Schema compliance
-- Expected finding recall
-- Unsupported claim count
-- Citation validity/correctness
-- Groundedness
-- Recommendation completeness
-- Risk consistency
-- Tekrarlar arası tutarlılık
-
-## 14. Güvenlik ve gizlilik hedefleri
-
-- Yüklenen dosya güvenilmeyen veridir.
-- Raw log application loguna yazılmaz.
-- Prompt injection’a karşı system/data ayrımı vardır.
-- Knowledge dokümanındaki talimatlar yürütülmez.
-- Model tool veya shell erişimi alamaz.
-- Dosya limitleri ve timeout uygulanır.
-- Geçici dosya temizlenir.
-- Secret/personal data repository’ye girmez.
-- API varsayılan olarak local erişimle sınırlıdır.
-
-Ayrıntılı model: `SECURITY_AND_PRIVACY.md`.
-
-## 15. Non-functional gereksinimler
-
-### Güvenilirlik
-
-- Parser aynı input için aynı output’u üretir.
-- Job ve hata durumları açıkça kaydedilir.
-- Geçersiz LLM çıktısı başarılı kabul edilmez.
-
-### Tekrar üretilebilirlik
-
-- Dependency’ler exact sürümlerle kilitlenir.
-- Model ID/digest ve quantization kaydedilir.
-- Prompt ve schema sürümlendirilir.
-- Sentetik benchmark vakaları repository’de tutulur.
-
-### Taşınabilirlik
-
-- Windows native fallback belgelenir.
-- Docker, host runtime’lara erişebildiği ölçüde desteklenir.
-- Bilgi tabanı ve DB tek makinede çalışır.
-
-### Gözlemlenebilirlik
-
-- Correlation ID
-- Structured logs
-- Stage duration
-- Güvenli hata kodları
-- Raw log/prompt olmadan teşhis edilebilirlik
-
-## 16. MVP kabul kriterleri
-
-1. Foundry Local’da en az bir model çalışır.
-2. Ollama’da en az bir model çalışır.
-3. FastAPI her iki provider’a erişebilir.
-4. Güvenli SSH log upload çalışır.
-5. Parser belirlenen gerçekleri doğru çıkarır.
-6. En az 5 lisansı denetlenmiş kaynak ingest edilir.
-7. Retrieval ilgili chunk’ları getirir.
-8. İki provider da geçerli yapılandırılmış rapor üretebilir veya kontrollü hata verir.
-9. Citation’lar gerçek chunk’lara bağlanır.
-10. En az 10 etiketli vaka vardır.
-11. İki deployment profili aynı vakalarla karşılaştırılır.
-12. Latency, token/s ve RAM kaydedilir.
-13. Deterministik test suite geçer.
-14. Docker veya native fallback belgelenmiş ve çalışırdır.
-15. Model cache sonrası internet kapalı örnek analiz tamamlanır.
-16. README ile başka biri kurulumu ve demoyu tekrar edebilir.
-
-## 17. Stretch goals
-
-Öncelik sırası:
-
-1. IP/kullanıcı maskeleme
-2. Basit web UI
-3. MITRE ATT&CK teknik eşleştirme
-4. Nmap parser
-5. Nginx parser
-6. TF-IDF/embedding karşılaştırması
-7. RAG açık/kapalı deneyi
-8. PDF incident raporu
-9. Analiz geçmişi
-10. İmzalı offline bundle tasarımı
-
-## 18. Teslim biçimi
-
-- Açık GitHub repository
-- Kurulum ve kullanım README’si
-- Sentetik demo verisi
-- Testler ve benchmark sonuçları
-- Türkçe yaklaşık 2–5 dakikalık tanıtım videosu
-
-Video bir akademik savunma değildir. Problem, yapılan ürün, öğrenilen teknik konular ve somut çıktı kısa biçimde gösterilecektir.
-
+- PDF, Markdown, and plain-text ingestion
+- Heading-aware chunking with bounded overlap
+- Source and chunk metadata in SQLite
+- TF-IDF with cosine similarity
+- Stable top-k citations
+
+A local embedding retriever is optional and may be added only after the TF-IDF baseline is working and measured.
+
+## 10. API scope
+
+Planned endpoints:
+
+- GET /health
+- GET /models
+- POST /v1/knowledge/ingest
+- GET /v1/knowledge/sources
+- POST /v1/incidents/analyze
+- GET /v1/incidents/{incident_id}
+- POST /v1/benchmarks/run
+- GET /v1/benchmarks/{benchmark_id}
+
+Analysis and benchmark operations use bounded application jobs. Creation endpoints return 202 Accepted; status endpoints return progress, a valid result, or a controlled error.
+
+## 11. Persistence scope
+
+Planned tables:
+
+- documents
+- document_chunks
+- incidents
+- incident_findings
+- model_runs
+- benchmark_runs
+- benchmark_results
+
+The database may store hashes, sizes, parser metadata, structured findings, valid reports, safe runtime metadata, and metrics. It must not store raw logs by default.
+
+## 12. Benchmark objective
+
+The benchmark determines which complete local deployment profile offers the best balance of report quality, structured-output reliability, latency, and memory use on the target device.
+
+Profiles are compared with identical:
+
+- Synthetic cases
+- Parser results
+- Retrieved chunk packages
+- Prompt and schema versions
+- Compatible generation settings
+- Repetition policy
+
+Metrics include cold-load time, time to first token, total latency, tokens per second, memory measurements with declared scope, schema compliance, expected-finding recall, unsupported claims, citation validity, groundedness, recommendation completeness, risk consistency, and repeatability.
+
+## 13. Security and privacy requirements
+
+- All uploads are untrusted.
+- The core path has no cloud-model fallback.
+- Raw logs, full prompts, and full model responses are excluded from application logs.
+- Model and document content never become executable instructions.
+- The model has no tools, shell, or operating-system access.
+- Uploads have streamed limits, validation, timeouts, and guaranteed temporary-file cleanup.
+- API and runtime endpoints bind locally by default.
+- Secrets, personal data, real organizational logs, caches, and model weights are excluded from version control.
+
+## 14. Non-functional requirements
+
+- Reproducible dependency, model-profile, prompt, schema, and fixture versions
+- Deterministic parser behavior for identical inputs
+- Strict validation of model output
+- Controlled job and error states
+- Native Windows fallback when container-to-host runtime access is unreliable
+- Structured privacy-preserving logs with correlation IDs and stage durations
+- Offline execution after required artifacts have been prepared and verified
+
+## 15. MVP acceptance criteria
+
+1. At least one Foundry Local profile and one Ollama profile run successfully.
+2. The application can reach both provider implementations.
+3. Secure SSH log upload and deterministic parsing pass positive and negative tests.
+4. At least five license-reviewed sources are ingested.
+5. Retrieval returns relevant, traceable chunks.
+6. Each provider produces a valid structured report or a controlled failure.
+7. Every citation resolves to an existing source and chunk.
+8. At least ten labeled synthetic cases exercise normal, suspicious, malformed, and adversarial inputs.
+9. Candidate deployment profiles are compared with the same evidence packages.
+10. Required quality, latency, throughput, and memory metrics are recorded or explicitly marked unavailable.
+11. Unit, integration, security, lint, formatting, and type checks pass.
+12. Docker deployment or the documented native fallback works.
+13. A cached, network-disabled analysis completes without external requests.
+14. Repository documentation enables another developer to reproduce the setup and validation.
+
+## 16. Stretch goals
+
+In priority order:
+
+1. Stable IP and account pseudonymization
+2. A minimal local web interface
+3. MITRE ATT&CK technique mapping
+4. A local embedding retrieval experiment
+5. RAG-on versus RAG-off evaluation
+6. Additional log parsers after the SSH MVP
+7. PDF report export
+8. Analysis history and retention controls
+9. A signed offline-bundle manifest
+
+## 17. Repository deliverables
+
+- Source code and configuration
+- Setup, usage, architecture, security, and offline-operation documentation
+- Synthetic fixtures and benchmark cases
+- Automated tests
+- Reproducible benchmark configuration and results
+- License and provenance metadata for redistributable knowledge sources

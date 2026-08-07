@@ -1,161 +1,161 @@
 # SecureOps Local — Decision Log
 
-Bu dosya kısa mimari karar kaydıdır. Ayrıntılı ADR’ler `docs/adr/` altında daha sonra oluşturulabilir.
+Statuses: Proposed, Accepted, Superseded, Rejected.
 
-Durumlar: `Proposed`, `Accepted`, `Superseded`, `Rejected`.
+## D-001 — Decision-support product boundary
 
-## D-001 — Ürün bir SIEM/IDS değildir
+- Status: Accepted
+- Decision: The product supports initial incident review; it is not a SIEM, IDS,
+  attack tool, or automated remediation product.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Ürün ilk inceleme ve doküman destekli karar destek prototipidir.
-- Gerekçe: Dört haftalık kapsam ve yanlış güvenlik iddialarını önleme.
-- Sonuç: Real-time monitoring ve otomatik engelleme yok.
+## D-002 — Deterministic parser before LLM
 
-## D-002 — Deterministik parser, LLM’den önce gelir
+- Status: Accepted
+- Decision: Counts, identities, timestamps, and patterns come from deterministic code.
+- Consequence: observed_findings is application-controlled.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Sayım ve temel gerçekler Python kurallarıyla çıkarılır.
-- Gerekçe: LLM aritmetiği ve log ayrıştırması güvenilir truth source değildir.
-- Sonuç: `observed_findings` parser truth ile sınırlandırılır.
+## D-003 — No model training
 
-## D-003 — Model eğitimi/fine-tuning yok
+- Status: Accepted
+- Decision: Use existing local models with RAG; no training or fine-tuning.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Hazır local instruct modeller ve RAG kullanılacak.
-- Gerekçe: RAG training değildir; eğitim süre/donanım açısından gereksiz scope expansion.
+## D-004 — Provider-independent multi-runtime architecture
 
-## D-004 — Multi-runtime provider mimarisi
+- Status: Accepted
+- Decision: Foundry Local and Ollama implement the same LocalLLMProvider contract.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Foundry Local ve Ollama eşit provider’lardır.
-- Gerekçe: Güçlü portföy çıktısı, vendor lock-in azaltma ve objektif deployment karşılaştırması.
-- Sonuç: Ortak `LocalLLMProvider`; default profil benchmark öncesi seçilmez.
+## D-005 — Deployment profile is the comparison unit
 
-## D-005 — Benchmark birimi deployment profile’dır
+- Status: Accepted
+- Decision: Benchmark model, runtime, quantization, execution backend, and generation
+  settings as one deployment profile.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Model+runtime+quantization+execution provider birlikte raporlanır.
-- Gerekçe: Farklı runtime’lar saf model karşılaştırması değildir.
+## D-006 — Host runtimes with containerized application
 
-## D-006 — Foundry ve Ollama Windows host üzerinde
+- Status: Accepted, subject to P1 verification
+- Decision: Run Foundry and Ollama on Windows; prefer FastAPI in Docker.
+- Fallback: Run FastAPI natively on Windows.
 
-- Durum: Accepted, spike doğrulamasına tabi
-- Tarih: 2026-08-03
-- Karar: Donanım entegrasyonu için runtime’lar hostta, FastAPI tercihen Docker’da.
-- Fallback: FastAPI native Windows.
+## D-007 — Modular monolith
 
-## D-007 — Modüler monolith
+- Status: Accepted
+- Decision: Use one FastAPI deployment unit with internal modules.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Tek FastAPI application/deployment unit.
-- Gerekçe: Mikroservis/message broker dört haftalık proje için gereksiz.
+## D-008 — Bounded local job runner
 
-## D-008 — Background job, haricî broker yok
+- Status: Accepted
+- Decision: Use an in-process queue with SQLite state and no external broker.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Sınırlı in-process queue + SQLite state.
-- Sonuç: Restart sırasında running jobs interrupted olur.
+## D-009 — SQLite persistence stack
 
-## D-009 — SQLite + SQLAlchemy 2 + Alembic
+- Status: Accepted
+- Decision: Use SQLite, SQLAlchemy 2, and Alembic.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Gerekçe: İlişkili tablolar ve tekrar üretilebilir schema migration.
+## D-010 — TF-IDF retrieval baseline
 
-## D-010 — TF-IDF MVP baseline
+- Status: Accepted
+- Decision: Use TF-IDF and cosine similarity before considering embeddings.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: İlk retrieval TF-IDF + cosine.
-- Gerekçe: Küçük koleksiyon, offline taşınabilirlik, açıklanabilirlik.
-- Sonuç: Embedding opsiyonel deney.
+## D-011 — No vector database for the MVP
 
-## D-011 — Haricî vector database yok
+- Status: Accepted
+- Decision: The small knowledge collection does not justify an external vector store.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Gerekçe: 5–10 doküman için gereksiz operasyon ve paketleme maliyeti.
+## D-012 — No raw-log persistence
 
-## D-012 — Raw log kalıcı saklanmaz
+- Status: Accepted
+- Decision: Persist only safe hashes, metadata, masked evidence, and validated reports.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Varsayılan ve MVP davranışı raw retention yok.
-- Sonuç: Hash/metadata ve maskelenmiş sınırlı evidence tutulabilir.
+## D-013 — Strict validation with one repair
 
-## D-013 — Strict Pydantic validation ve tek repair
+- Status: Accepted
+- Decision: Reject additional fields, allow one controlled repair, then fail with
+  invalid_model_output.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Model çıktısı strict doğrulanır; en fazla bir repair denemesi.
-- Sonuç: İkinci hata `invalid_model_output`.
+## D-014 — Swagger UI
 
-## D-014 — Swagger UI MVP arayüzüdür
+- Status: Accepted
+- Decision: Do not build a separate frontend for the MVP.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Gerekçe: Ayrı frontend çekirdek değere katkı sağlamadan süre tüketir.
+## D-015 — Air-gapped-ready terminology
 
-## D-015 — “Air-gapped-ready” terminolojisi
+- Status: Accepted
+- Decision: Clearly separate online preparation from verified cached offline operation.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Ürün gerçek air-gap iddiasını hazırlık sürecinden ayırır.
-- Gerekçe: İlk model/runtime/dependency indirmesi internet gerektirir.
+## D-016 — Ollama benchmark candidates
 
-## D-016 — İlk Ollama model adayı
+- Status: Accepted for P1 evaluation
+- Decision: Evaluate Foundation-Sec-8B-Reasoning Q4_K_M and Qwen3.5 9B Q4_K_M.
+- Consequence: Neither is the default before the benchmark.
 
-- Durum: Proposed, spike bekliyor
-- Tarih: 2026-08-03
-- Aday: Qwen3 8B 4-bit
-- Fallback: Qwen3 4B
-- Not: Gerçek RAM, latency, JSON ve Türkçe/İngilizce güvenlik raporu kalitesi ölçülmeden Accepted/default olmaz.
+## D-017 — Project Python version
 
-## D-017 — Python sürümü
+- Status: Accepted
+- Decision: Target Python 3.12 even though host Python 3.13.3 is installed.
 
-- Durum: Proposed
-- Tarih: 2026-08-03
-- Tercih: Python 3.12
-- Mevcut: Python 3.13.3
-- Karar koşulu: Foundry/Ollama/FastAPI dependency spike.
+## D-018 — Knowledge-source license audit
 
-## D-018 — Güvenlik dokümanı lisans audit
+- Status: Accepted
+- Decision: Keep content outside Git when redistribution is unknown or prohibited.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Redistribution belirsizse doküman repo dışı, link/metadata içi.
+## D-019 — No definitive attack attribution
 
-## D-019 — Kesin saldırı dili yok
+- Status: Accepted
+- Decision: Reports express evidence-supported possibilities and limitations.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Model olası yorum ve limitation üretir.
-- Gerekçe: SSH log örüntüsü tek başına saldırı/compromise kanıtı değildir.
+## D-020 — Reasoning non-retention
 
-## D-020 — Projenin değerlendirme çıktısı kısa Türkçe video
+- Status: Accepted
+- Decision: Model reasoning may run internally but is never returned, logged, or persisted.
 
-- Durum: Accepted
-- Tarih: 2026-08-03
-- Karar: Mimari, öğrenme ve çalışan ürün 2–5 dakikada anlatılacak.
-- Sonuç: Canlı demo ve README video anlatısını desteklemelidir; akademik sunum hazırlanmaz.
+## D-021 — Quality-first default selection
 
-## Yeni karar ekleme şablonu
+- Status: Accepted
+- Decision: Foundation, Qwen, and Foundry may all win. Quality gates precede latency;
+  latency is the final tie-breaker.
 
-```text
-## D-XXX — Başlık
+## D-022 — External model storage
 
-- Durum:
-- Tarih:
-- Karar:
-- Gerekçe:
-- Alternatifler:
-- Sonuç/Fallback:
-```
+- Status: Accepted
+- Decision: Store downloads and runtime model caches outside the repository under:
+  C:\Users\husoelrey\Documents\docs\AI_models
+- Condition: Verify each runtime's supported cache configuration before moving or downloading models.
 
+## D-023 — Tool-neutral Git workflow
+
+- Status: Accepted
+- Date: 2026-08-07
+- Decision: Use feature/p<phase>-<feature>, fix/<topic>, docs/<topic>, and
+  spike/<topic> branch names without editor or assistant branding.
+- Commit policy: Create small, single-purpose commits only after relevant checks pass.
+- Push policy: When the user authorizes Git publication, push every verified feature
+  commit to its working branch.
+- Merge policy: Keep main verified and merge only after the feature or phase exit
+  criteria pass.
+- Safety: Do not force-push, rewrite shared history, or stage unrelated user changes.
+
+## D-024 — Repository artifact exclusion policy
+
+- Status: Accepted
+- Date: 2026-08-07
+- Decision: Keep Python caches, virtual environments, coverage and build output,
+  editor and operating-system state, secrets, environment files, operational
+  databases, temporary and uploaded data, raw security logs, generated reports,
+  runtime caches, downloads, archives, and model weights out of version control.
+- Trackable boundary: Safe synthetic logs are allowed only in explicit synthetic
+  fixture, benchmark-case, or version-controlled example paths. Benchmark case
+  definitions, migrations, source manifests, documentation, and text examples remain
+  trackable by default.
+- Verification: Representative ignored and trackable paths must pass
+  `git check-ignore` during repository-governance validation.
+
+## New decision template
+
+## D-XXX — Title
+
+- Status:
+- Date:
+- Decision:
+- Rationale:
+- Alternatives:
+- Consequence or fallback:

@@ -1,391 +1,116 @@
 # SecureOps Local — Implementation Roadmap
 
-## 1. Yürütme ilkesi
+Use PLAN.md as the executable checklist. Complete phases in order and do not bypass a
+failing gate.
 
-Her görev küçük, tek amaçlı ve test edilebilir olmalıdır. Bir phase gate tamamlanmadan sonraki faza geçilmez. Her günün sonunda çalışan veya açıkça teşhis edilmiş bir durum bırakılır.
+Current verified transition: P0 is complete. P1 is next and begins with a read-only
+inventory of installed runtime versions and service health before any model download
+or import.
 
-## 2. Phase gate’ler
+## P0 — Repository governance and project context
 
-### G0 — Repository ve bağlam
+Exit criteria:
 
-Başarı:
+- Context documents are internally consistent.
+- PLAN.md, CURRENT_STATUS.md, and DECISION_LOG.md agree.
+- Legacy model and scope assumptions are removed.
+- Environment inventory is current.
+- Git ignore policy protects models, caches, databases, secrets, and raw logs.
 
-- Git repository hazır
-- `AGENTS.md` ve bağlam belgeleri tutarlı
-- Mevcut ortam envanteri kayıtlı
+## P1 — Local runtime and model profiles
 
-### G1 — Runtime smoke testleri
+Exit criteria:
 
-Başarı:
+- Docker, Ollama, and Foundry runtime health is verified.
+- External model storage configuration is verified.
+- Foundation-Sec GGUF hash and license metadata are recorded.
+- Foundation-Sec is imported into Ollama.
+- Qwen3.5 9B Q4_K_M is available.
+- A compatible Foundry model is resolved from the device catalog.
+- All three profiles pass the same structured-output smoke case.
+- Reasoning separation and non-retention are proven.
+- Docker-to-host connectivity and cached offline inference are tested.
 
-- Foundry Local kurulu
-- Bir Foundry modeli terminal/native spike üzerinden yanıt veriyor
-- Ollama kurulu
-- Bir Ollama modeli yanıt veriyor
-- Model/runtime/provider metadata kaydedilmiş
-- İnternetin ilk indirmede nerede gerektiği biliniyor
+## P2 — Deterministic SSH analysis core
 
-### G2 — Deterministik parser
+Exit criteria:
 
-Başarı:
+- Python project and tooling are bootstrapped.
+- Strict domain schemas exist.
+- Upload handling is safe and bounded.
+- SSHAuthLogParser supports required formats.
+- Deterministic aggregates and time-window patterns are tested.
+- Malformed input and timestamp limitations are covered.
+- No LLM is required for parser correctness.
 
-- SSH parser interface
-- Ana SSH olay formatları
-- Aggregate statistics
-- Edge-case testleri
-- LLM bağımlılığı olmadan doğru JSON
+## P3 — Local knowledge base and RAG
 
-### G3 — Bilgi tabanı ve retrieval
+Exit criteria:
 
-Başarı:
+- Authoritative source manifest and license decisions exist.
+- PDF, Markdown, and text ingestion is safe.
+- Chunks preserve source and section/page metadata.
+- TF-IDF retrieval finds expected topics.
+- Context packing enforces source diversity.
+- Citation IDs resolve to retrieved chunks.
+- Document prompt-injection tests pass.
 
-- Lisans manifesti
-- PDF/MD/TXT ingestion
-- Chunk metadata
-- TF-IDF top-k retrieval
-- Beklenen konuyu bulan testler
+## P4 — Provider-independent incident analysis
 
-### G4 — Uçtan uca tek profil
+Exit criteria:
 
-Başarı:
+- LocalLLMProvider is implemented.
+- Ollama and Foundry adapters return normalized results.
+- Prompt and ModelAssessment schema are versioned.
+- One controlled repair path is tested.
+- IncidentReport assembly keeps parser truth immutable.
+- Reasoning, raw prompts, and raw responses are not stored.
+- One complete cited incident analysis succeeds.
 
-- Güvenli upload
-- Job akışı
-- Provider çağrısı
-- Prompt/validation
-- Citation’lı incident report
-- SQLite persistence
+## P5 — API, persistence, and job orchestration
 
-### G5 — İki provider benchmark
+Exit criteria:
 
-Başarı:
+- SQLite schema and migrations exist.
+- Bounded job runner handles restart and backpressure.
+- Health, model, knowledge, incident, and benchmark endpoints exist.
+- Application logging is structured and privacy-safe.
+- Raw security logs are absent from the database.
 
-- Aynı evidence paketi
-- En az 10 etiketli vaka
-- Foundry + Ollama profile run
-- Deterministic scores
-- Timing/token/RAM raporu
+## P6 — Deployment-profile benchmark and default selection
 
-### G6 — Offline ve teslim
+Exit criteria:
 
-Başarı:
+- At least ten synthetic cases are version-controlled.
+- Every profile receives the same frozen evidence package.
+- Deterministic scorers and manual rubric are implemented.
+- Cold and warm metrics are recorded sequentially.
+- Failures and unavailable metrics remain visible.
+- The default profile is selected using documented quality gates.
+- Benchmark results and reproducibility manifest are published.
 
-- Model cache sonrası ağ kapalı demo
-- Docker veya native fallback
-- CI
-- README
-- Video senaryosu
-- MVP acceptance checklist
+## P7 — Offline and GitHub readiness
 
-## 3. Dört haftalık plan
+Exit criteria:
 
-## Hafta 1 — Risk kapatma ve temel
+- Cached end-to-end operation succeeds without network access.
+- CI passes with fake providers and no model downloads.
+- README, architecture, quickstart, troubleshooting, licenses, synthetic examples,
+  benchmark results, and limitations are complete.
+- The MVP acceptance checklist passes.
+- main remains in a working and reviewable state.
 
-### Gün 1: Ortam teşhisi
+## Scope-reduction order
 
-Amaç:
-
-- Python, Docker, winget/App Installer, WSL ve sürücü durumunu doğrulamak.
-
-Dosyalar:
-
-- `docs/context/CURRENT_STATUS.md`
-- Gerekirse `docs/adr/0001-development-environment.md`
-
-Komutlar:
-
-- `git status --short --branch`
-- `py -0p`
-- `python --version`
-- `docker version`
-- `docker compose version`
-- `wsl --version`
-- `wsl --list --verbose`
-
-Başarı:
-
-- Her aracın gerçek durumu ve eksikleri kaydedilmiş.
-
-Hata/fallback:
-
-- Araç yoksa ana uygulama yazılmaz; resmî kurulum yolu doğrulanır.
-
-### Gün 2: Foundry CLI ve katalog spike
-
-Amaç:
-
-- Foundry kurmak, katalog ve provider’ları görmek.
-
-Dosyalar:
-
-- `docs/spikes/foundry-environment.md`
-- `CURRENT_STATUS.md`
-
-Doğrulama:
-
-- `foundry --version`
-- `foundry service status`
-- `foundry model list`
-- Provider/device filtreleri
-
-Başarı:
-
-- En az bir küçük chat model adayı, dosya boyutu ve provider bilgisi.
-
-Hata/fallback:
-
-- Service restart ve resmî troubleshooting.
-- CLI çalışıp SDK uymazsa ayrı kaydet.
-
-### Gün 3: Foundry native inference spike
-
-Amaç:
-
-- Windows SDK ile model lifecycle ve streaming’i doğrulamak.
-
-Dosyalar:
-
-- `spikes/foundry_native/`
-- `docs/spikes/foundry-native-results.md`
-
-Başarı:
-
-- Model indirilir/yüklenir, kısa response alınır, provider ve süre kaydedilir.
-
-Hata/fallback:
-
-- Python 3.13 uymazsa Python 3.12 venv.
-- WinML başarısızsa CPU/cross-platform kontrolü.
-
-### Gün 4: Ollama ve model kapasite spike
-
-Amaç:
-
-- Ollama API ve Intel Arc/Vulkan/CPU davranışını doğrulamak.
-
-Dosyalar:
-
-- `docs/spikes/ollama-results.md`
-
-Model sırası:
-
-1. Küçük smoke-test modeli
-2. Qwen3 8B 4-bit
-3. Yetersizse Qwen3 4B
-
-Başarı:
-
-- `/v1/chat/completions` streaming response, model digest ve bellek/süre gözlemi.
-
-Hata/fallback:
-
-- Vulkan kararsızsa CPU.
-- 8B yavaş/ağırsa 4B.
-
-### Gün 5: Docker-host bridge ve ADR
-
-Amaç:
-
-- Container’dan iki host runtime’a erişimi kanıtlamak.
-
-Dosyalar:
-
-- `spikes/runtime_bridge/`
-- `docs/adr/0002-runtime-deployment.md`
-
-Başarı:
-
-- Docker’dan iki runtime health/chat çağrısı veya native Windows fallback kararı.
-
-Milestone:
-
-- `v0.1-runtime-spikes` için commit-ready durum.
-
-## Hafta 2 — Deterministik çekirdek
-
-### Gün 6: Python proje bootstrap
-
-Dosyalar:
-
-- `pyproject.toml`
-- Dependency input/lock dosyaları
-- `src/secureops_local/`
-- `tests/`
-- `.gitignore`
-
-Başarı:
-
-- Empty app import, Ruff, mypy ve Pytest çalışır.
-
-### Gün 7: Domain/Pydantic şemaları
-
-Amaç:
-
-- Parser, incident report, citation ve model metadata sözleşmeleri.
-
-Başarı:
-
-- Geçerli fixture kabul edilir; yanlış enum/extra alan reddedilir.
-
-### Gün 8: Parser line normalization
-
-Kapsam:
-
-- Failed/accepted password
-- Accepted publickey
-- Invalid user
-- IPv4/IPv6
-
-Başarı:
-
-- Fixture satırları beklenen normalized events’e dönüşür.
-
-### Gün 9: Aggregation ve edge cases
-
-Kapsam:
-
-- Count, unique, top source, privileged attempt
-- Time window
-- Repeated attempts
-- Failure then success
-- Unknown year/timezone limitation
-
-Başarı:
-
-- Tamamen deterministic parser result.
-
-### Gün 10: DB ve güvenli upload
-
-Kapsam:
-
-- SQLAlchemy/Alembic
-- Upload stream limit
-- Hash
-- MIME/content
-- Temp cleanup
-
-Başarı:
-
-- Migration çalışır; kötü dosya testleri geçer; raw log persist edilmez.
-
-Milestone:
-
-- `v0.2-deterministic-core` için commit-ready durum.
-
-## Hafta 3 — Knowledge ve incident analysis
-
-### Gün 11: Source manifest ve lisans audit
-
-Başarı:
-
-- En az 5 aday kaynak metadata’sı ve redistribution kararı.
-
-### Gün 12: Ingestion ve chunking
-
-Başarı:
-
-- PDF/MD/TXT’den başlık/sayfa metadata’lı chunk’lar.
-
-### Gün 13: TF-IDF retrieval
-
-Başarı:
-
-- Test sorgularında beklenen source topic top-k içinde.
-
-### Gün 14: Provider contract ve adaptörler
-
-Başarı:
-
-- Fake provider ile unit test.
-- Foundry ve Ollama normalize GenerationResult döndürür.
-
-### Gün 15: Prompt, validation ve incident service
-
-Başarı:
-
-- Tek provider ile upload → parse → retrieve → generate → validate → persist.
-
-Milestone:
-
-- `v0.3-local-incident-analysis` için commit-ready durum.
-
-## Hafta 4 — Benchmark, offline ve teslim
-
-### Gün 16: Benchmark vaka seti
-
-Başarı:
-
-- En az 10 sentetik vaka, expected findings ve forbidden claims.
-
-### Gün 17: Deterministic scoring
-
-Başarı:
-
-- Known outputs expected recall, unsupported claims, citation validity ve recommendation scores verir.
-
-### Gün 18: Runtime metrics ve iki profil run
-
-Başarı:
-
-- Cold/warm, TTFT, total, token/s, RAM ve schema metrics kaydedilir.
-
-### Gün 19: Docker/native packaging ve offline test
-
-Başarı:
-
-- Seçilen deployment ile internet kapalı örnek analiz.
-- Offline manifest.
-
-### Gün 20: CI, README ve video provası
-
-Başarı:
-
-- CI deterministic suite geçer.
-- README sıfırdan kurulumu anlatır.
-- 2–5 dakikalık video akışı prova edilir.
-
-Milestone:
-
-- `v1.0-mvp` için commit-ready durum.
-
-## 4. Görev başına Definition of Done
-
-- Sadece görev kapsamındaki dosyalar değişti.
-- Happy path ve ilgili failure path test edildi.
-- Test komutu ve sonucu kaydedildi.
-- Yeni dependency gerekçelendirildi ve kilitlendi.
-- Güvenlik/gizlilik etkisi değerlendirildi.
-- Current status güncellendi.
-- İlgili phase gate kanıtı oluştu.
-
-## 5. Zaman sıkışırsa kapsam azaltma sırası
-
-Önce ertelenecekler:
+If scope must be reduced, defer in this order:
 
 1. Embedding retrieval
-2. Basit frontend
-3. Üçüncü model
-4. PDF rapor
-5. Nmap/Nginx parser
-6. Prometheus
-7. Advanced GPU telemetry
+2. Separate frontend
+3. Additional model variants beyond the three candidates
+4. PDF report export
+5. Additional log parsers
+6. Advanced GPU telemetry
 
-Asla kesilmeyecek çekirdek:
-
-- Güvenli upload
-- Deterministik parser
-- En az 5 kaynaklı TF-IDF RAG
-- Foundry + Ollama provider
-- Strict output validation
-- En az 10 benchmark vakası
-- Offline smoke test
-
-## 6. Geri dönüş politikası
-
-- Test başarısızken yeni faza geçme.
-- Son başarılı commit’i tespit et.
-- Kullanıcı değişikliklerini silme.
-- Commit geri alınacaksa `git revert` tercih et.
-- Preview SDK sorunu ürün kodunu kirletiyorsa adapter/fallback kullan.
-- Başarısız spike sonucunu silme; ADR’da neden çalışmadığını kaydet.
-
+Never remove safe upload handling, deterministic parsing, authoritative local RAG,
+strict output validation, both runtime providers, the benchmark case set, or offline
+verification.
