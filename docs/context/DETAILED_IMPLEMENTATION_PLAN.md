@@ -36,7 +36,7 @@ remediation system. It does not train or fine-tune a model.
 
 The last verified local inventory is:
 
-- Active work branch: `feature/p1-runtime-readiness`
+- Active work branch: `feature/p1-runtime-storage`
 - Application code: not created
 - Host operating system: Windows 11
 - CPU: Intel Core Ultra 5 125H
@@ -49,10 +49,15 @@ The last verified local inventory is:
 - Windows Docker CLI: installed, but bare `docker` is not resolvable from the current
   Windows `PATH`
 - Ollama: version 0.32.6; loopback API is healthy at
-  `http://127.0.0.1:11434/api`
-- Foundry Local CLI: version 0.10.2; daemon is not running and no endpoint is active
-- External model root: exists and is empty at
-  `C:\Users\husoelrey\Documents\docs\AI_models`
+  `http://127.0.0.1:11434/api`; user-scope `OLLAMA_MODELS` points to the empty
+  external `ollama` child
+- Foundry Local CLI: version 0.10.2; daemon reports `ready` at the current dynamic
+  endpoint `http://127.0.0.1:39251`; its user-set cache is the external `foundry`
+  child
+- External model root: both runtime paths are configured beneath
+  `C:\Users\husoelrey\Documents\docs\AI_models`; neither contains model or
+  execution-provider payloads, although Foundry automatically generated catalog
+  metadata
 - Previous interrupted Ollama download: removed from the checked cache locations
 - Model download completion and file integrity: not verified
 

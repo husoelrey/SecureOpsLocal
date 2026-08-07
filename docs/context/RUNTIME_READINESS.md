@@ -439,8 +439,8 @@ Each command exited `0`. Daemon startup automatically contacted the Azure Foundr
 catalog and wrote the JSON metadata index even though no catalog-list command was
 issued. It also attempted automatic execution-provider registration, which failed
 immediately because the generated request contained unknown provider names. The
-daemon log then reported
-`0` locally cached models; the execution-provider directory remained empty. This
+daemon log then reported `0` locally cached models; the execution-provider directory
+remained empty. This
 means no model weights or execution-provider payloads were acquired, but daemon
 startup is not network-silent and is not by itself proof of air-gapped readiness.
 
@@ -559,5 +559,18 @@ complete. Docker, Ollama, and the Foundry daemon are healthy on their verified l
 surfaces, but no Foundry deployment profile exists and container-to-host connectivity
 is still unverified.
 
-The next bounded P1 step is to configure and verify runtime-supported external model
-storage without acquiring models or running inference.
+Final storage state:
+
+| Runtime | Supported setting | Effective external path | Previous path state | Effective path state |
+|---|---|---|---|---|
+| Ollama | User-scope `OLLAMA_MODELS` | `C:\Users\husoelrey\Documents\docs\AI_models\ollama` | Default cache: `0` files, `0` bytes | `0` files, `0` bytes |
+| Foundry Local | `foundry cache cd`; `userSet:true` | `C:\Users\husoelrey\Documents\docs\AI_models\foundry` | One unchanged `foundry.modelinfo.json`; no model payload | One generated `foundry.modelinfo.json`; no model or EP payload |
+
+Both effective paths are children of the approved external root. The Ollama cache is
+literally empty. Foundry's effective cache is empty of model and execution-provider
+payloads but contains the automatically generated catalog metadata index documented
+above. No runtime artifact exists inside the repository.
+
+The next safe bounded P1 task is to acquire and hash the Foundation-Sec GGUF under
+the approved external root, after re-verifying its official source, exact filename,
+license, and expected digest. That task must not import, run, or benchmark the model.

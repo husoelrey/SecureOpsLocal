@@ -72,7 +72,7 @@ This document records verified reality. Never describe planned work as complete.
 | Phase | Status | Evidence |
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
-| P1 — Local runtime and model profiles | In progress | Runtime versions and health inventoried; Foundry daemon ready; all deployment profiles remain unverified |
+| P1 — Local runtime and model profiles | In progress | Runtime health and external model storage verified; all deployment profiles remain unverified |
 | P2 — Deterministic SSH analysis core | Not started | No application code |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
@@ -82,15 +82,16 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Finalize this bounded P1 external-storage prerequisite:
+Continue P1 with one bounded Foundation-Sec acquisition task:
 
-1. Recheck both effective runtime paths, old caches, service health, and repository
-   artifact boundaries.
-2. Synchronize the verified storage condition across project status, roadmap, and
-   decision records.
-3. Run repository-wide reference, link, sensitive-artifact, and complete-diff checks.
+1. Re-verify the official repository, exact Q4_K_M GGUF filename, license, and
+   published digest before downloading.
+2. Download only that GGUF beneath the approved external root and compute its local
+   SHA-256.
+3. Record source, license, expected digest, local digest, size, and storage path.
 
-Do not list either model catalog, acquire models, import profiles, or run inference.
+Do not import the GGUF into Ollama, pull Qwen, list the Foundry catalog, run inference,
+or begin benchmarking in that bounded task.
 
 ## Open decisions
 
