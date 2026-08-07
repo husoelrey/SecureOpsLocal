@@ -34,14 +34,18 @@ This document records verified reality. Never describe planned work as complete.
   `C:\Users\husoelrey\Documents\docs\AI_models\ollama`
 - The old Ollama default cache still exists and contains no files; no data was moved
   or deleted during configuration
-- Foundry Local CLI 0.10.2 daemon is running and reports `ready`; this run uses the
-  dynamic endpoint `http://127.0.0.1:48077` from `foundrylocald` PID `23948`
-- Foundry startup created one catalog metadata JSON file, but no model-weight or
-  execution-provider payload; the daemon reports zero locally cached models and the
-  execution-provider directory is empty
+- Foundry Local CLI 0.10.2 daemon is running and reports `ready`; after its controlled
+  cache-change restart, this run uses dynamic endpoint `http://127.0.0.1:39251` from
+  `foundrylocald` PID `26768`
+- Foundry's effective, user-set cache is
+  `C:\Users\husoelrey\Documents\docs\AI_models\foundry`
+- Foundry startup generated catalog metadata JSON in both the old and new cache
+  locations, but no model-weight or execution-provider payload; the daemon reports
+  zero locally cached models and the execution-provider directory is empty
 - Installed Foundry CLI uses `foundry server status`; current Microsoft guidance still
   documents the rejected `foundry service status` form
-- External model root exists; its `ollama` child exists and contains no files:
+- External model root exists; its `ollama` and `foundry` children are the effective
+  runtime paths and contain no model payloads:
   C:\Users\husoelrey\Documents\docs\AI_models
 - A previous interrupted Ollama download was removed from the cache; no matching
   partial model files remain in the checked locations
@@ -78,13 +82,13 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue P1 with bounded external-storage configuration:
+Finalize this bounded P1 external-storage prerequisite:
 
-1. Configure Foundry beneath the approved external model root using the installed
-   CLI's supported cache command.
-2. Allow only the runtime-required daemon restart, then verify its effective cache
-   location, dynamic endpoint, and readiness.
-3. Keep the old and new cache locations free of model and execution-provider payloads.
+1. Recheck both effective runtime paths, old caches, service health, and repository
+   artifact boundaries.
+2. Synchronize the verified storage condition across project status, roadmap, and
+   decision records.
+3. Run repository-wide reference, link, sensitive-artifact, and complete-diff checks.
 
 Do not list either model catalog, acquire models, import profiles, or run inference.
 

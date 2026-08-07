@@ -12,7 +12,7 @@ outside this prerequisite work.
 |---|---|---|---|
 | Docker Desktop | Desktop 4.85.0; Engine/CLI 29.6.2 | `npipe:////./pipe/dockerDesktopLinuxEngine` | Engine healthy; Windows `PATH` limitation |
 | Ollama | CLI/API 0.32.6 | `http://127.0.0.1:11434/api` | Healthy; external model cache configured and empty |
-| Foundry Local | CLI 0.10.2 | Dynamic `http://127.0.0.1:48077` for this run | Daemon ready; no model or execution-provider payloads cached |
+| Foundry Local | CLI 0.10.2 | Dynamic `http://127.0.0.1:39251` for current run | Daemon ready; external cache configured; no model or execution-provider payloads |
 
 Versions, endpoints, and state in this table are derived from the commands and exact
 outputs in the runtime-specific sections below. No model response was requested or
@@ -277,9 +277,9 @@ the verified loopback endpoint if container-to-host access is unavailable.
 
 Foundry Local CLI `0.10.2` is installed and available on the Windows `PATH`. Its
 daemon was deliberately started with the installed CLI and reached the CLI-reported
-`ready` state. For this run it exposed the dynamic loopback endpoint
-`http://127.0.0.1:48077` from process `foundrylocald` PID `23948`; both values are
-ephemeral and must be discovered again after a restart.
+`ready` state. After external-cache configuration, the current run exposes dynamic
+loopback endpoint `http://127.0.0.1:39251` from process `foundrylocald` PID `26768`.
+Both values are ephemeral and must be discovered again after a restart.
 
 The current primary reference checked on 2026-08-07 was Microsoft's
 [Foundry Local CLI guidance](https://learn.microsoft.com/en-us/azure/foundry-local/how-to/how-to-use-foundry-local-cli).
@@ -312,7 +312,7 @@ Observed state:
 - Read-only daemon check: `foundry server status`
 - Read-only cache-location check: `foundry cache location`
 
-### Daemon startup, health, and endpoint
+### Initial daemon startup, health, and endpoint
 
 Before startup, these commands established the baseline:
 
@@ -397,7 +397,7 @@ captured JSON:
 The automatic port setting agrees with the observed dynamic endpoint. The specific
 port must not be hard-coded into application configuration.
 
-### Model-cache configuration
+### Initial default model-cache observation
 
 Command:
 
@@ -444,6 +444,81 @@ daemon log then reported
 means no model weights or execution-provider payloads were acquired, but daemon
 startup is not network-silent and is not by itself proof of air-gapped readiness.
 
+### External Foundry cache configuration
+
+The current Microsoft CLI guidance and the installed `foundry cache cd --help`
+identify `foundry cache cd <path>` as the supported cache-location command. The
+approved child path was normalized and confirmed to remain below the external model
+root before it was created:
+
+```powershell
+New-Item -ItemType Directory -Path 'C:\Users\husoelrey\Documents\docs\AI_models\foundry'
+foundry cache cd 'C:\Users\husoelrey\Documents\docs\AI_models\foundry' --force --output json
+```
+
+Both commands exited `0`. Exact CLI output:
+
+```json
+{"success":true,"message":"Cache directory set to 'C:\\Users\\husoelrey\\Documents\\docs\\AI_models\\foundry'."}
+```
+
+The cache command stopped the running daemon rather than restarting it. This was
+verified immediately with `foundry server status --output json`, which exited `0`
+and returned:
+
+```json
+{"running":false,"state":"not_running"}
+```
+
+Effective-location commands:
+
+```powershell
+foundry cache location --output json
+foundry config show --output json
+```
+
+Both exited `0`. The relevant exact outputs were:
+
+```json
+{"path":"C:\\Users\\husoelrey\\Documents\\docs\\AI_models\\foundry","userSet":true}
+{"key":"cache-directory","value":"C:\\Users\\husoelrey\\Documents\\docs\\AI_models\\foundry","userSet":true}
+```
+
+Because daemon health was part of the acceptance evidence, it was then started once:
+
+```powershell
+foundry server start --output json
+foundry server status --output json
+```
+
+Both exited `0`. Exact outputs:
+
+```json
+{"running":true,"webUrls":["http://127.0.0.1:39251"],"port":39251}
+{"running":true,"state":"ready","pid":26768,"webUrls":["http://127.0.0.1:39251"],"startedAt":"2026-08-07T09:18:26.6610314+00:00","uptime":"0s","logFile":"C:\\Users\\husoelrey\\.foundry\\logs\\foundrylocald-2026-08-07.log"}
+```
+
+`Get-Process -Id 26768` resolved to `foundrylocald`, and a `TcpClient` connection to
+`127.0.0.1:39251` succeeded. Daemon logs explicitly reported the configured
+`--cache-directory` value, `0` locally cached models, and the same failed automatic
+execution-provider registration described above.
+
+Post-restart storage evidence:
+
+- Effective external Foundry cache: one automatically generated
+  `foundry.modelinfo.json` metadata index, `79,275` bytes
+- External metadata SHA-256:
+  `2C7DF16ABD1931FB617A063985B8569EEDCE6CD2FA2B8E4231CDAE76623FE85B`
+- Old default cache: its original metadata index remains unchanged, `79,275` bytes,
+  SHA-256 `D06C700AA5CC62B481ADA4F606048900A050642A08D54D97C4C303C9397749A1`
+- Model-weight or other model payload files across both paths: `0`
+- Execution-provider files in `C:\Users\husoelrey\.foundry\ep`: `0`
+- Existing files moved or deleted: `0`
+
+No catalog-list, model-download, model-load, inference, or benchmark command was run.
+As with the first startup, daemon initialization itself refreshed catalog metadata;
+the Foundry cache is therefore empty of model payloads, not literally file-empty.
+
 ### Failures and minimum reproduction
 
 The command documented by the current Microsoft page does not exist in the installed
@@ -468,8 +543,9 @@ Minimum current-state reproduction:
 foundry server status --output json
 ```
 
-Current result: daemon running with state `ready`. The endpoint and PID are dynamic,
-so the JSON output must be read rather than copied from this record.
+Current result: daemon running with state `ready` and an externally configured cache.
+The endpoint and PID are dynamic, so the JSON output must be read rather than copied
+from this record.
 
 Fallback implication: daemon readiness does not make a Foundry deployment profile
 available. No model or execution provider has been selected, downloaded, loaded, or
