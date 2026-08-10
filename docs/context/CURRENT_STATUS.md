@@ -7,7 +7,7 @@ This document records verified reality. Never describe planned work as complete.
 ## Repository
 
 - Path: C:\Users\husoelrey\Documents\Projects\SecureOpsLocal
-- Branch: feature/p1-foundation-acquisition
+- Branch: feature/p1-foundation-import
 - Application code: not created
 - Python project and dependencies: not created
 - Database schema and migrations: not created
@@ -49,7 +49,7 @@ This document records verified reality. Never describe planned work as complete.
   C:\Users\husoelrey\Documents\docs\AI_models
 - A previous interrupted Ollama download was removed from the cache; no matching
   partial model files remain in the checked locations
-- Model download completion and model hashes: Foundation-Sec GGUF acquired and SHA-256 verified; others not verified
+- Model download completion and model hashes: Foundation-Sec GGUF acquired and SHA-256 verified; imported into Ollama; others not verified
 
 ## Locked product decisions
 
@@ -72,7 +72,7 @@ This document records verified reality. Never describe planned work as complete.
 | Phase | Status | Evidence |
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
-| P1 — Local runtime and model profiles | In progress | Runtime health and external model storage verified; Foundation-Sec GGUF acquired; other deployment profiles remain unverified |
+| P1 — Local runtime and model profiles | In progress | Runtime health and external model storage verified; Foundation-Sec GGUF acquired and imported into Ollama; other deployment profiles remain unverified |
 | P2 — Deterministic SSH analysis core | Not started | No application code |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
@@ -82,7 +82,7 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue P1 with Foundation-Sec import into Ollama.
+Continue P1 with pulling Qwen3.5 9B Q4_K_M.
 
 ## Open decisions
 

@@ -5,8 +5,8 @@ failing gate.
 
 Current verified transition: P0 is complete and P1 is in progress. Runtime health,
 Foundry daemon readiness, and runtime-supported external model storage are verified.
-The Foundation-Sec GGUF has been successfully acquired, verified, and recorded.
-The next bounded task is to import the Foundation-Sec model into Ollama without pulling Qwen or running benchmarking.
+The Foundation-Sec GGUF has been successfully acquired, verified, and imported into Ollama.
+The next bounded task is to pull Qwen3.5 9B Q4_K_M.
 
 ## P0 — Repository governance and project context
 
@@ -32,7 +32,7 @@ Exit criteria:
 - Reasoning separation and non-retention are proven.
 - Docker-to-host connectivity and cached offline inference are tested.
 
-Current P1 evidence: the first two exit criteria and the Foundation-Sec GGUF acquisition are verified. Model import, Qwen acquisition, Foundry model resolution,
+Current P1 evidence: the first two exit criteria, the Foundation-Sec GGUF acquisition, and its import into Ollama are verified. Qwen acquisition, Foundry model resolution,
 profile-smoke-test, bridge, and offline-restart criteria remain pending, so the P1
 gate is not complete.
 
