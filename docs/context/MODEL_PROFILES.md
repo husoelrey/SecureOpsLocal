@@ -46,3 +46,16 @@ This document records the provenance, licensing, and acquisition state of the mo
   - Timestamp: 2026-08-10T21:08:00Z
   - Ollama Alias: `qwen:0.5b`
   - Note: Substituted 9B with 0.5B for fast local benchmark testing as permitted.
+
+## Phi-3-mini-4k-instruct (Foundry Local)
+
+- **Role**: Microsoft Foundry Local compatible baseline model
+- **Source URLs**:
+  - Microsoft Foundry Catalog: `Phi-3-mini-4k-instruct-onnx`
+- **Quantization**: ONNX INT4 (DirectML optimized)
+- **License Findings**:
+  - The model is governed by the MIT License.
+- **Current Acquisition State**: Resolved for Foundry Local daemon
+  - Timestamp: 2026-08-10T21:10:00Z
+  - Foundry Alias: `Phi-3-mini-4k-instruct-onnx`
+  - Execution Backend: DirectML (Intel Arc GPU optimized)
