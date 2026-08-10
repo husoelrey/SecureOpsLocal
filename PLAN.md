@@ -48,10 +48,10 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Define strict Pydantic domain schemas.
 - [ ] Implement safe streamed upload validation and temporary-file cleanup.
 - [x] Implement the extensible parser contract and `SSHAuthLogParser`.
-- [ ] Support required IPv4, IPv6, syslog, journald, authentication, and invalid-user variants.
+- [x] Support required IPv4, IPv6, syslog, journald, authentication, and invalid-user variants.
 - [ ] Implement deterministic statistics and configurable time-window patterns.
 - [ ] Report unparsed lines and timestamp assumptions as explicit limitations.
-- [ ] Complete parser unit, edge-case, and malformed-input tests without an LLM dependency.
+- [x] Complete parser unit, edge-case, and malformed-input tests without an LLM dependency.
 
 ## P3 — Local knowledge base and RAG
 
