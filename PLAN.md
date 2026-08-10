@@ -38,9 +38,9 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Resolve a compatible Foundry Local chat model from the device catalog.
 - [x] Run the same structured-output smoke case against all three profiles.
 - [x] Verify that Foundation reasoning is separated from final content and never persisted.
-- [ ] Verify Docker-to-host runtime connectivity through `host.docker.internal`.
-- [ ] Document model licenses, digests, quantization, runtime versions, and execution backends.
-- [ ] Verify cached inference without network access.
+- [x] Verify Docker-to-host runtime connectivity through `host.docker.internal`.
+- [x] Document model licenses, digests, quantization, runtime versions, and execution backends.
+- [x] Verify cached inference without network access.
 
 ## P2 — Deterministic SSH analysis core
 

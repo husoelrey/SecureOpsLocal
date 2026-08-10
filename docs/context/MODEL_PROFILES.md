@@ -59,3 +59,9 @@ This document records the provenance, licensing, and acquisition state of the mo
   - Timestamp: 2026-08-10T21:10:00Z
   - Foundry Alias: `Phi-3-mini-4k-instruct-onnx`
   - Execution Backend: DirectML (Intel Arc GPU optimized)
+
+## Default Profile Selection
+
+- **Selected Default**: Foundation-Sec-8B-Reasoning Q4_K_M (via Ollama)
+- **Selection Rationale**: Passed structured-output constraints, successfully isolated reasoning traces, and fits securely within the device memory profile while satisfying the cybersecurity domain requirements.
+- **Offline / Container Behavior**: Verified simulated offline container-to-host bridge behavior through `host.docker.internal`, successfully resolving endpoints without external network access.
