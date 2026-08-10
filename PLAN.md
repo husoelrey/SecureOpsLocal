@@ -44,7 +44,7 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 
 ## P2 — Deterministic SSH analysis core
 
-- [ ] Bootstrap the Python 3.12 FastAPI project and development tooling.
+- [x] Bootstrap the Python 3.12 FastAPI project and development tooling.
 - [ ] Define strict Pydantic domain schemas.
 - [ ] Implement safe streamed upload validation and temporary-file cleanup.
 - [ ] Implement the extensible parser contract and `SSHAuthLogParser`.
