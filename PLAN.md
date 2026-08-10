@@ -36,8 +36,8 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Import Foundation-Sec-8B-Reasoning Q4_K_M into Ollama outside the repository.
 - [x] Pull and verify Qwen3.5 (using `qwen:0.5b` for fast testing).
 - [x] Resolve a compatible Foundry Local chat model from the device catalog.
-- [ ] Run the same structured-output smoke case against all three profiles.
-- [ ] Verify that Foundation reasoning is separated from final content and never persisted.
+- [x] Run the same structured-output smoke case against all three profiles.
+- [x] Verify that Foundation reasoning is separated from final content and never persisted.
 - [ ] Verify Docker-to-host runtime connectivity through `host.docker.internal`.
 - [ ] Document model licenses, digests, quantization, runtime versions, and execution backends.
 - [ ] Verify cached inference without network access.
