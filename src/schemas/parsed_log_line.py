@@ -12,8 +12,10 @@ class ParsedLogLineBase(BaseModel):
     raw_content: str
     is_parsed: bool = True
 
+
 class ParsedLogLineCreate(ParsedLogLineBase):
     pass
+
 
 class ParsedLogLine(ParsedLogLineBase):
     id: int
