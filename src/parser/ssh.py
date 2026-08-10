@@ -24,12 +24,40 @@ SSHD_PREFIX_RE = re.compile(r"sshd(?:\[\d+\])?:\s+(.*)")
 # Disconnected from 192.168.1.1 port 1234
 # Accepted publickey for user from 192.168.1.1 port 1234 ssh2
 AUTH_PATTERNS = [
-    (re.compile(r"Accepted (?P<auth_method>password|publickey) for (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"), "successful_login"),  # noqa: E501
-    (re.compile(r"Failed (?P<auth_method>password|publickey) for invalid user (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"), "failed_login_invalid_user"),  # noqa: E501
-    (re.compile(r"Failed (?P<auth_method>password|publickey) for (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"), "failed_login"),  # noqa: E501
-    (re.compile(r"Invalid user (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"), "invalid_user"),  # noqa: E501
-    (re.compile(r"Connection closed by (?:(?:authenticating|invalid) user (?P<user>\S+) )?(?P<ip>\S+) port (?P<port>\d+)"), "connection_closed"),  # noqa: E501
-    (re.compile(r"Disconnected from (?:(?:authenticating|invalid) user (?P<user>\S+) )?(?P<ip>\S+) port (?P<port>\d+)"), "disconnected"),  # noqa: E501
+    (
+        re.compile(
+            r"Accepted (?P<auth_method>password|publickey) for (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"
+        ),
+        "successful_login",
+    ),  # noqa: E501
+    (
+        re.compile(
+            r"Failed (?P<auth_method>password|publickey) for invalid user (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"
+        ),
+        "failed_login_invalid_user",
+    ),  # noqa: E501
+    (
+        re.compile(
+            r"Failed (?P<auth_method>password|publickey) for (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"
+        ),
+        "failed_login",
+    ),  # noqa: E501
+    (
+        re.compile(r"Invalid user (?P<user>\S+) from (?P<ip>\S+) port (?P<port>\d+)"),
+        "invalid_user",
+    ),  # noqa: E501
+    (
+        re.compile(
+            r"Connection closed by (?:(?:authenticating|invalid) user (?P<user>\S+) )?(?P<ip>\S+) port (?P<port>\d+)"
+        ),
+        "connection_closed",
+    ),  # noqa: E501
+    (
+        re.compile(
+            r"Disconnected from (?:(?:authenticating|invalid) user (?P<user>\S+) )?(?P<ip>\S+) port (?P<port>\d+)"
+        ),
+        "disconnected",
+    ),  # noqa: E501
 ]
 
 

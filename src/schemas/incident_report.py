@@ -11,8 +11,10 @@ class IncidentReportBase(BaseModel):
     recommendations: str
     raw_model_response: str
 
+
 class IncidentReportCreate(IncidentReportBase):
     pass
+
 
 class IncidentReport(IncidentReportBase):
     id: int

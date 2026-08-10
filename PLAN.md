@@ -49,8 +49,8 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [ ] Implement safe streamed upload validation and temporary-file cleanup.
 - [x] Implement the extensible parser contract and `SSHAuthLogParser`.
 - [x] Support required IPv4, IPv6, syslog, journald, authentication, and invalid-user variants.
-- [ ] Implement deterministic statistics and configurable time-window patterns.
-- [ ] Report unparsed lines and timestamp assumptions as explicit limitations.
+- [x] Implement deterministic statistics and configurable time-window patterns.
+- [x] Report unparsed lines and timestamp assumptions as explicit limitations.
 - [x] Complete parser unit, edge-case, and malformed-input tests without an LLM dependency.
 
 ## P3 — Local knowledge base and RAG
