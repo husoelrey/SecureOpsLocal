@@ -33,3 +33,16 @@ This document records the provenance, licensing, and acquisition state of the mo
   - Download Method: HTTPS via `curl.exe`
   - Resumed: Yes
   - Ollama Alias: `foundation-sec-8b-reasoning:q4_k_m`
+
+## Qwen 0.5B
+
+- **Role**: Fast-testing baseline model for structural benchmark
+- **Source URLs**: 
+  - Ollama Registry: https://ollama.com/library/qwen
+- **Quantization**: Default Ollama quantization for the 0.5b tag
+- **License Findings**:
+  - The model is governed by the Tongyi Qianwen LICENSE AGREEMENT.
+- **Current Acquisition State**: Acquired and imported into Ollama
+  - Timestamp: 2026-08-10T21:08:00Z
+  - Ollama Alias: `qwen:0.5b`
+  - Note: Substituted 9B with 0.5B for fast local benchmark testing as permitted.
