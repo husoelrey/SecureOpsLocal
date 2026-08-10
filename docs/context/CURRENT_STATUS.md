@@ -7,11 +7,11 @@ This document records verified reality. Never describe planned work as complete.
 ## Repository
 
 - Path: C:\Users\husoelrey\Documents\Projects\SecureOpsLocal
-- Branch: feature/p1-foundation-import
-- Application code: not created
-- Python project and dependencies: not created
-- Database schema and migrations: not created
-- Automated tests: not created
+- Branch: main
+- Application code: created (`src/`)
+- Python project and dependencies: created (`pyproject.toml`, `requirements.txt`)
+- Database schema and migrations: created (SQLite, SQLAlchemy 2, Alembic)
+- Automated tests: created (`tests/`)
 - PLAN.md and the detailed implementation plan: created and internally consistent
 - Root .gitignore: created; representative ignored and trackable paths verified
 - Repository audit: local Markdown links and Markdown file references resolve; no
@@ -73,7 +73,7 @@ This document records verified reality. Never describe planned work as complete.
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
 | P1 — Local runtime and model profiles | Complete | Runtime health, offline simulation, Qwen/Foundry models documented, smoke test passed, default profile chosen. |
-| P2 — Deterministic SSH analysis core | Not started | No application code |
+| P2 — Deterministic SSH analysis core | Complete | Parser implementation, test suite, and validation passed |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
 | P5 — API, persistence, and job orchestration | Not started | No API or database |
@@ -82,7 +82,7 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue to P2 with Python and FastAPI Boilerplate setup.
+Continue to P3: Local knowledge base and RAG.
 
 ## Open decisions
 
