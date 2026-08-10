@@ -47,7 +47,7 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Bootstrap the Python 3.12 FastAPI project and development tooling.
 - [x] Define strict Pydantic domain schemas.
 - [ ] Implement safe streamed upload validation and temporary-file cleanup.
-- [ ] Implement the extensible parser contract and `SSHAuthLogParser`.
+- [x] Implement the extensible parser contract and `SSHAuthLogParser`.
 - [ ] Support required IPv4, IPv6, syslog, journald, authentication, and invalid-user variants.
 - [ ] Implement deterministic statistics and configurable time-window patterns.
 - [ ] Report unparsed lines and timestamp assumptions as explicit limitations.
