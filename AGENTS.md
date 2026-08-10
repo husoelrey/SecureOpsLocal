@@ -18,9 +18,10 @@ Before changing the repository, read these files in order:
 8. docs/context/RAG_AND_KNOWLEDGE_BASE.md for retrieval, documents, or prompts
 9. docs/context/BENCHMARK_METHODOLOGY.md for models, runtimes, or measurements
 10. docs/context/RUNTIME_READINESS.md for runtime or model work
-11. docs/context/IMPLEMENTATION_ROADMAP.md for execution order
-12. docs/context/DEVELOPMENT_WORKFLOW.md for delivery rules
-13. docs/context/DECISION_LOG.md for accepted decisions
+11. docs/context/MODEL_PROFILES.md for runtime or model work
+12. docs/context/IMPLEMENTATION_ROADMAP.md for execution order
+13. docs/context/DEVELOPMENT_WORKFLOW.md for delivery rules
+14. docs/context/DECISION_LOG.md for accepted decisions
 
 Conflict priority:
 
