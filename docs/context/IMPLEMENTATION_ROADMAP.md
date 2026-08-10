@@ -5,9 +5,8 @@ failing gate.
 
 Current verified transition: P0 is complete and P1 is in progress. Runtime health,
 Foundry daemon readiness, and runtime-supported external model storage are verified.
-No deployment profile has been acquired or tested. The next bounded task is to
-acquire and hash only the Foundation-Sec GGUF beneath the approved external root
-after re-verifying its source, filename, license, and expected digest.
+The Foundation-Sec GGUF has been successfully acquired, verified, and recorded.
+The next bounded task is to import the Foundation-Sec model into Ollama without pulling Qwen or running benchmarking.
 
 ## P0 — Repository governance and project context
 
@@ -33,8 +32,8 @@ Exit criteria:
 - Reasoning separation and non-retention are proven.
 - Docker-to-host connectivity and cached offline inference are tested.
 
-Current P1 evidence: the first two exit criteria are verified. Every model-acquisition,
-profile-smoke-test, bridge, and offline-restart criterion remains pending, so the P1
+Current P1 evidence: the first two exit criteria and the Foundation-Sec GGUF acquisition are verified. Model import, Qwen acquisition, Foundry model resolution,
+profile-smoke-test, bridge, and offline-restart criteria remain pending, so the P1
 gate is not complete.
 
 ## P2 — Deterministic SSH analysis core

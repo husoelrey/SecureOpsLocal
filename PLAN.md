@@ -32,7 +32,7 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 ## P1 — Local runtime and model profiles
 
 - [x] Verify Docker Desktop, Ollama, and Foundry Local versions and service health.
-- [ ] Acquire the Foundation-Sec GGUF outside the repository, verify it, and record its SHA-256.
+- [x] Acquire the Foundation-Sec GGUF outside the repository, verify it, and record its SHA-256.
 - [ ] Import Foundation-Sec-8B-Reasoning Q4_K_M into Ollama outside the repository.
 - [ ] Pull and verify Qwen3.5 9B Q4_K_M.
 - [ ] Resolve a compatible Foundry Local chat model from the device catalog.

@@ -1,13 +1,13 @@
 # SecureOps Local — Current Status
 
-Last updated: **2026-08-07**
+Last updated: **2026-08-10**
 
 This document records verified reality. Never describe planned work as complete.
 
 ## Repository
 
 - Path: C:\Users\husoelrey\Documents\Projects\SecureOpsLocal
-- Branch: feature/p1-runtime-storage
+- Branch: feature/p1-foundation-acquisition
 - Application code: not created
 - Python project and dependencies: not created
 - Database schema and migrations: not created
@@ -49,7 +49,7 @@ This document records verified reality. Never describe planned work as complete.
   C:\Users\husoelrey\Documents\docs\AI_models
 - A previous interrupted Ollama download was removed from the cache; no matching
   partial model files remain in the checked locations
-- Model download completion and model hashes are not verified
+- Model download completion and model hashes: Foundation-Sec GGUF acquired and SHA-256 verified; others not verified
 
 ## Locked product decisions
 
@@ -72,7 +72,7 @@ This document records verified reality. Never describe planned work as complete.
 | Phase | Status | Evidence |
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
-| P1 — Local runtime and model profiles | In progress | Runtime health and external model storage verified; all deployment profiles remain unverified |
+| P1 — Local runtime and model profiles | In progress | Runtime health and external model storage verified; Foundation-Sec GGUF acquired; other deployment profiles remain unverified |
 | P2 — Deterministic SSH analysis core | Not started | No application code |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
@@ -82,16 +82,7 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue P1 with one bounded Foundation-Sec acquisition task:
-
-1. Re-verify the official repository, exact Q4_K_M GGUF filename, license, and
-   published digest before downloading.
-2. Download only that GGUF beneath the approved external root and compute its local
-   SHA-256.
-3. Record source, license, expected digest, local digest, size, and storage path.
-
-Do not import the GGUF into Ollama, pull Qwen, list the Foundry catalog, run inference,
-or begin benchmarking in that bounded task.
+Continue P1 with Foundation-Sec import into Ollama.
 
 ## Open decisions
 
