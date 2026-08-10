@@ -72,7 +72,7 @@ This document records verified reality. Never describe planned work as complete.
 | Phase | Status | Evidence |
 |---|---|---|
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
-| P1 — Local runtime and model profiles | In progress | Runtime health and external model storage verified; Foundation-Sec GGUF acquired and imported into Ollama; other deployment profiles remain unverified |
+| P1 — Local runtime and model profiles | Complete | Runtime health, offline simulation, Qwen/Foundry models documented, smoke test passed, default profile chosen. |
 | P2 — Deterministic SSH analysis core | Not started | No application code |
 | P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
@@ -82,7 +82,7 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue P1 with pulling Qwen3.5 9B Q4_K_M.
+Continue to P2 with Python and FastAPI Boilerplate setup.
 
 ## Open decisions
 
