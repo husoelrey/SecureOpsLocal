@@ -34,7 +34,8 @@ Exit criteria:
 
 Current P1 evidence: all exit criteria have been met. P1 gate is complete.
 
-## P2 — Deterministic SSH analysis core
+## Phase 2 (P2): Deterministic SSH Analysis Core
+*Status: Complete*
 
 Exit criteria:
 
