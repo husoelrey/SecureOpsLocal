@@ -45,7 +45,7 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 ## P2 — Deterministic SSH analysis core
 
 - [x] Bootstrap the Python 3.12 FastAPI project and development tooling.
-- [ ] Define strict Pydantic domain schemas.
+- [x] Define strict Pydantic domain schemas.
 - [ ] Implement safe streamed upload validation and temporary-file cleanup.
 - [ ] Implement the extensible parser contract and `SSHAuthLogParser`.
 - [ ] Support required IPv4, IPv6, syslog, journald, authentication, and invalid-user variants.
@@ -79,7 +79,7 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 
 ## P5 — API, persistence, and job orchestration
 
-- [ ] Add SQLite repositories and Alembic migrations.
+- [x] Add SQLite repositories and Alembic migrations.
 - [ ] Implement the bounded in-process job runner with concurrency one.
 - [ ] Implement health and model-discovery endpoints.
 - [ ] Implement knowledge ingestion and source-listing endpoints.
