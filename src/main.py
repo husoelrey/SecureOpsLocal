@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from src.api.upload import router as upload_router
 
 app = FastAPI(
     title="SecureOps Local",
@@ -10,6 +11,8 @@ app = FastAPI(
     docs_url="/docs",  # Swagger UI enabled by default here
     redoc_url=None,    # Disable redoc as per requirements for Swagger UI only
 )
+
+app.include_router(upload_router, prefix="/api", tags=["upload"])
 
 @app.get("/health")
 def health_check() -> dict[str, str]:
