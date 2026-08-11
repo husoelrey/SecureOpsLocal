@@ -13,7 +13,10 @@ from src.schemas.rag import DocumentChunk
 class MockProvider(LocalLLMProvider):
     def __init__(self):
         self.model_name = "mock-model"
-        self.generate = AsyncMock()
+        self._mock_generate = AsyncMock()
+
+    async def generate(self, prompt, system_prompt, schema):
+        return await self._mock_generate(prompt, system_prompt, schema)
 
 
 @pytest.fixture
@@ -45,7 +48,7 @@ def mock_chunks():
 @pytest.mark.asyncio
 async def test_analyzer_success(mock_analysis, mock_chunks):
     provider = MockProvider()
-    provider.generate.return_value = NormalizedGenerationResult(
+    provider._mock_generate.return_value = NormalizedGenerationResult(
         content='{"summary": "Test", "possible_interpretations": ["Test"], "risk_level": "low", "risk_reasoning": "Test", "recommended_actions": ["Test"], "citations": ["chunk-1"]}',
         prompt_tokens=10,
         completion_tokens=20,
@@ -59,7 +62,7 @@ async def test_analyzer_success(mock_analysis, mock_chunks):
     assert result.status == "completed"
     assert result.risk_level == "low"
     assert result.citations == ["chunk-1"]
-    assert provider.generate.call_count == 1
+    assert provider._mock_generate.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -74,17 +77,17 @@ async def test_analyzer_repair_success(mock_analysis, mock_chunks):
         content='{"summary": "Test", "possible_interpretations": ["Test"], "risk_level": "medium", "risk_reasoning": "Test", "recommended_actions": ["Test"], "citations": ["chunk-1"]}',
     )
     
-    provider.generate.side_effect = [bad_result, good_result]
+    provider._mock_generate.side_effect = [bad_result, good_result]
     
     analyzer = IncidentAnalyzer(provider=provider)
     result = await analyzer.analyze_incident("inc-1", mock_analysis, mock_chunks)
     
     assert result.status == "completed"
     assert result.risk_level == "medium"
-    assert provider.generate.call_count == 2
+    assert provider._mock_generate.call_count == 2
     
     # Ensure second call contains error feedback
-    second_call_prompt = provider.generate.call_args_list[1][1]["prompt"]
+    second_call_prompt = provider._mock_generate.call_args_list[1][0][0]  # first positional arg is prompt
     assert "ERROR IN PREVIOUS ATTEMPT" in second_call_prompt
 
 
@@ -92,7 +95,7 @@ async def test_analyzer_repair_success(mock_analysis, mock_chunks):
 async def test_analyzer_invalid_citations(mock_analysis, mock_chunks):
     provider = MockProvider()
     # Cite an invalid chunk
-    provider.generate.return_value = NormalizedGenerationResult(
+    provider._mock_generate.return_value = NormalizedGenerationResult(
         content='{"summary": "Test", "possible_interpretations": ["Test"], "risk_level": "low", "risk_reasoning": "Test", "recommended_actions": ["Test"], "citations": ["fake-chunk"]}',
     )
     
@@ -110,10 +113,10 @@ async def test_analyzer_second_failure_rejected(mock_analysis, mock_chunks):
     bad_result = NormalizedGenerationResult(
         content='{"bad": "schema"}',
     )
-    provider.generate.side_effect = [bad_result, bad_result]
+    provider._mock_generate.side_effect = [bad_result, bad_result]
     
     analyzer = IncidentAnalyzer(provider=provider, max_retries=1)
     result = await analyzer.analyze_incident("inc-1", mock_analysis, mock_chunks)
     
     assert result.status == "invalid_model_output"
-    assert provider.generate.call_count == 2
+    assert provider._mock_generate.call_count == 2

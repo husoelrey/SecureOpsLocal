@@ -1,5 +1,6 @@
 # ruff: noqa: E501
 import logging
+import re
 from typing import List
 
 from src.llm.base import LocalLLMProvider
@@ -15,6 +16,19 @@ class IncidentAnalyzer:
     def __init__(self, provider: LocalLLMProvider, max_retries: int = 1):
         self.provider = provider
         self.max_retries = max_retries
+
+    def _strip_reasoning(self, content: str) -> str:
+        """Remove reasoning traces (e.g. <think> blocks) to ensure they are not processed or persisted."""
+        # Non-greedy match for <think>...</think>
+        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL | re.IGNORECASE)
+        # Also strip markdown code blocks if the model wrapped the JSON
+        if content.startswith("```json"):
+            content = content[7:]
+        if content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        return content.strip()
 
     def _build_user_prompt(self, analysis: LogAnalysis, chunks: List[DocumentChunk]) -> str:
         prompt = "## Parser Findings (Deterministic Facts)\n"
@@ -44,7 +58,8 @@ class IncidentAnalyzer:
                     schema=schema
                 )
                 
-                assessment = ModelAssessment.model_validate_json(result.content)
+                clean_content = self._strip_reasoning(result.content)
+                assessment = ModelAssessment.model_validate_json(clean_content)
                 
                 invalid_citations = [c for c in assessment.citations if c not in valid_chunk_ids]
                 if invalid_citations:
@@ -72,8 +87,19 @@ class IncidentAnalyzer:
                 
             except Exception as e:
                 attempt += 1
+                from pydantic import ValidationError
+                
+                # Scrub the error message for logs to avoid leaking raw model responses
+                if isinstance(e, ValidationError):
+                    log_error = f"Schema validation failed: {e.error_count()} errors found."
+                else:
+                    # Generic exceptions might still contain some model text if we raised it
+                    log_error = type(e).__name__
+
+                logger.warning(f"Model generation failed on attempt {attempt}: {log_error}")
+                
+                # The full error can go into the prompt for the next attempt (not persisted)
                 last_error = str(e)
-                logger.warning(f"Model generation failed on attempt {attempt}: {last_error}")
                 if attempt <= self.max_retries:
                     current_prompt = user_prompt + f"\n\nERROR IN PREVIOUS ATTEMPT:\n{last_error}\nPlease correct this error and ensure strict schema compliance."
         
