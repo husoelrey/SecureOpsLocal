@@ -1,5 +1,6 @@
 from src.schemas.analysis import IPAggregation, LogAnalysis
 from src.schemas.incident_report import IncidentReport, IncidentReportCreate
+from src.schemas.llm import NormalizedGenerationResult
 from src.schemas.parsed_log_line import ParsedLogLine, ParsedLogLineCreate
 
 __all__ = [
@@ -9,4 +10,5 @@ __all__ = [
     "IncidentReportCreate",
     "ParsedLogLine",
     "ParsedLogLineCreate",
+    "NormalizedGenerationResult",
 ]
