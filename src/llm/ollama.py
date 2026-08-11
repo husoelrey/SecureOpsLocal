@@ -3,7 +3,7 @@ import json
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from src.llm.base import LocalLLMProvider
 from src.schemas.llm import NormalizedGenerationResult
@@ -29,7 +29,7 @@ class OllamaProvider(LocalLLMProvider):
         )
         try:
             with urllib.request.urlopen(req, timeout=300) as response:
-                return json.loads(response.read().decode("utf-8"))
+                return cast(Dict[str, Any], json.loads(response.read().decode("utf-8")))
         except urllib.error.URLError as e:
             raise RuntimeError(f"Ollama API request failed: {e}")
 
