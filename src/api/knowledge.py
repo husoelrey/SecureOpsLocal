@@ -1,11 +1,14 @@
 import hashlib
 import os
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from src.api.upload import secure_temp_file
 from src.rag.ingestion import parse_document
+from src.rag.chunking import chunk_document
+from src.rag.store import global_knowledge_store
 from src.schemas.rag import IngestionResponse
 
 router = APIRouter()
@@ -21,7 +24,7 @@ def is_allowed_knowledge_extension(filename: str | None) -> bool:
     return ext.lower() in ALLOWED_KNOWLEDGE_EXTENSIONS
 
 
-@router.post("/upload/knowledge", response_model=IngestionResponse)
+@router.post("/ingest", response_model=IngestionResponse)
 async def upload_knowledge_document(
     file: UploadFile = File(...),
 ) -> IngestionResponse:
@@ -62,11 +65,31 @@ async def upload_knowledge_document(
         # Parse and extract text
         doc = parse_document(tmp_path, filename, file_hash)
         
-        # Here we will later call chunking and db persistence.
-        # For now, we return success after ingestion validation.
+        document_id = str(uuid.uuid4())
+        
+        # Chunk the document
+        chunks = chunk_document(
+            content=doc.content,
+            document_id=document_id,
+            source_title=filename
+        )
+        
+        # Store in global store
+        global_knowledge_store.add_source(
+            document_id=document_id, 
+            filename=filename, 
+            sha256=file_hash, 
+            size=total_size
+        )
+        global_knowledge_store.chunks.extend(chunks)
         
         return IngestionResponse(
             message="Document successfully ingested and validated",
+            document_id=document_id,
             sha256=file_hash,
             size=total_size,
         )
+
+@router.get("/sources")
+def list_knowledge_sources():
+    return {"sources": global_knowledge_store.get_sources()}

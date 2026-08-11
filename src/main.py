@@ -27,4 +27,4 @@ app = FastAPI(
 
 app.include_router(system_router, tags=["system"])
 app.include_router(upload_router, prefix="/api", tags=["upload"])
-app.include_router(knowledge_router, prefix="/api", tags=["knowledge"])
+app.include_router(knowledge_router, prefix="/v1/knowledge", tags=["knowledge"])

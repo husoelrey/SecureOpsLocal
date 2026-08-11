@@ -82,7 +82,7 @@ def test_extract_pdf_no_text(mock_pdf_reader):
 
 def test_api_upload_knowledge_invalid_extension():
     response = client.post(
-        "/api/upload/knowledge",
+        "/v1/knowledge/ingest",
         files={"file": ("test.jpg", b"dummy content")}
     )
     assert response.status_code == 400
@@ -91,7 +91,7 @@ def test_api_upload_knowledge_invalid_extension():
 def test_api_upload_knowledge_archive_signature():
     # Test zip archive signature
     response = client.post(
-        "/api/upload/knowledge",
+        "/v1/knowledge/ingest",
         files={"file": ("test.txt", b"PK\x03\x04dummy archive")}
     )
     assert response.status_code == 400
@@ -99,7 +99,7 @@ def test_api_upload_knowledge_archive_signature():
 
 def test_api_upload_knowledge_valid_text():
     response = client.post(
-        "/api/upload/knowledge",
+        "/v1/knowledge/ingest",
         files={"file": ("test.md", b"# Markdown doc\n\nSome text.")}
     )
     assert response.status_code == 200
@@ -107,3 +107,8 @@ def test_api_upload_knowledge_valid_text():
     assert "message" in data
     assert data["size"] == len(b"# Markdown doc\n\nSome text.")
     assert "sha256" in data
+
+def test_api_list_knowledge_sources():
+    response = client.get("/v1/knowledge/sources")
+    assert response.status_code == 200
+    assert "sources" in response.json()
