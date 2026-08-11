@@ -76,13 +76,13 @@ This document records verified reality. Never describe planned work as complete.
 | P2 — Deterministic SSH analysis core | Complete | Parser implementation, test suite, and validation passed |
 | P3 — Local knowledge base and RAG | Complete | Ingestion, chunking, retrieval, packing, and tests implemented and passing |
 | P4 — Provider-independent incident analysis | Complete | Provider adapters, strict assembly, privacy guarantees, and E2E integration test complete |
-| P5 — API, persistence, and job orchestration | Not started | No API or database |
+| P5 — API, persistence, and job orchestration | Complete | API endpoints, SQLite tracking, structured logging, and job runner implemented and tested |
 | P6 — Deployment-profile benchmark and default selection | Not started | No benchmark cases or results |
 | P7 — Offline and GitHub readiness | Not started | No offline workflow or CI |
 
 ## Next safe task
 
-Continue to P5: API, persistence, and job orchestration.
+Continue to P6: Deployment-profile benchmark and default selection.
 
 ## Open decisions
 
