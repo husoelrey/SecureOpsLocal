@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from src.api.knowledge import router as knowledge_router
 from src.api.upload import router as upload_router
 from src.api.system import router as system_router
+from src.api.incident import router as incident_router
 from contextlib import asynccontextmanager
 from src.job_runner import job_runner
 
@@ -26,5 +27,6 @@ app = FastAPI(
 )
 
 app.include_router(system_router, tags=["system"])
+app.include_router(incident_router, prefix="/v1/incidents", tags=["incidents"])
 app.include_router(upload_router, prefix="/api", tags=["upload"])
 app.include_router(knowledge_router, prefix="/v1/knowledge", tags=["knowledge"])

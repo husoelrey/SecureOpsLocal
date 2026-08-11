@@ -28,12 +28,12 @@ class JobRunner:
             self._worker_task = None
             logger.info("Job runner stopped.")
 
-    async def submit_job(self, func: Callable, *args, **kwargs) -> str:
+    async def submit_job(self, func: Callable, *args, job_id: Optional[str] = None, **kwargs) -> str:
         """
         Submits a job to the runner. Returns a job_id.
         Raises asyncio.QueueFull if the queue is full.
         """
-        job_id = str(uuid.uuid4())
+        job_id = job_id or str(uuid.uuid4())
         job_item = {
             "job_id": job_id,
             "func": func,
