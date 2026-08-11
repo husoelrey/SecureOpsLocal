@@ -66,16 +66,16 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 
 ## P4 — Provider-independent incident analysis
 
-- [ ] Define the common `LocalLLMProvider` contract and normalized generation result.
-- [ ] Implement the Ollama provider adapter.
-- [ ] Implement the Foundry Local provider adapter.
-- [ ] Version the system prompt and strict `ModelAssessment` schema.
-- [ ] Keep deterministic `observed_findings` outside model-generated output.
-- [ ] Implement final `IncidentReport` assembly and citation validation.
-- [ ] Implement one controlled model-output repair attempt.
-- [ ] Reject a second invalid response as `invalid_model_output`.
-- [ ] Prove that raw prompts, raw responses, and reasoning traces are not persisted or logged.
-- [ ] Complete one end-to-end incident analysis with citations.
+- [x] Define the common `LocalLLMProvider` contract and normalized generation result.
+- [x] Implement the Ollama provider adapter.
+- [x] Implement the Foundry Local provider adapter.
+- [x] Version the system prompt and strict `ModelAssessment` schema.
+- [x] Keep deterministic `observed_findings` outside model-generated output.
+- [x] Implement final `IncidentReport` assembly and citation validation.
+- [x] Implement one controlled model-output repair attempt.
+- [x] Reject a second invalid response as `invalid_model_output`.
+- [x] Prove that raw prompts, raw responses, and reasoning traces are not persisted or logged.
+- [x] Complete one end-to-end incident analysis with citations.
 
 ## P5 — API, persistence, and job orchestration
 
