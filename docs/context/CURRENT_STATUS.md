@@ -74,7 +74,7 @@ This document records verified reality. Never describe planned work as complete.
 | P0 — Repository governance and project context | Complete | Ignore policy, context consistency, reference, link, and artifact checks pass |
 | P1 — Local runtime and model profiles | Complete | Runtime health, offline simulation, Qwen/Foundry models documented, smoke test passed, default profile chosen. |
 | P2 — Deterministic SSH analysis core | Complete | Parser implementation, test suite, and validation passed |
-| P3 — Local knowledge base and RAG | Not started | No ingestion or retrieval code |
+| P3 — Local knowledge base and RAG | Complete | Ingestion, chunking, retrieval, packing, and tests implemented and passing |
 | P4 — Provider-independent incident analysis | Not started | No provider adapters |
 | P5 — API, persistence, and job orchestration | Not started | No API or database |
 | P6 — Deployment-profile benchmark and default selection | Not started | No benchmark cases or results |
@@ -82,7 +82,7 @@ This document records verified reality. Never describe planned work as complete.
 
 ## Next safe task
 
-Continue to P3: Local knowledge base and RAG.
+Continue to P4: Provider-independent incident analysis.
 
 ## Open decisions
 
