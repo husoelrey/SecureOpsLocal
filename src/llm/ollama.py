@@ -28,8 +28,31 @@ class OllamaProvider(LocalLLMProvider):
             headers={"Content-Type": "application/json"}
         )
         try:
+            start_time = time.monotonic()
+            ttft = None
+            content = ""
+            final_chunk = {}
+            
             with urllib.request.urlopen(req, timeout=300) as response:
-                return cast(Dict[str, Any], json.loads(response.read().decode("utf-8")))
+                for line in response:
+                    if line:
+                        chunk = json.loads(line.decode("utf-8"))
+                        msg_chunk = chunk.get("message", {}).get("content", "")
+                        
+                        if msg_chunk and ttft is None:
+                            ttft = (time.monotonic() - start_time) * 1000
+                            
+                        content += msg_chunk
+                        
+                        if chunk.get("done"):
+                            final_chunk = chunk
+                            break
+                            
+            return {
+                "content": content,
+                "ttft_ms": ttft,
+                "metrics": final_chunk
+            }
         except urllib.error.URLError as e:
             raise RuntimeError(f"Ollama API request failed: {e}")
 
@@ -46,7 +69,7 @@ class OllamaProvider(LocalLLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
-            "stream": False,
+            "stream": True,
             "format": schema,
             "options": {
                 "temperature": 0.0,
@@ -56,24 +79,25 @@ class OllamaProvider(LocalLLMProvider):
         
         start_time = time.monotonic()
         
-        response_data = await asyncio.to_thread(self._sync_generate, url, payload)
+        result = await asyncio.to_thread(self._sync_generate, url, payload)
         
         total_latency_ms = (time.monotonic() - start_time) * 1000
+        metrics = result["metrics"]
         
-        # Ollama specific metrics (in nanoseconds, so divide by 1_000_000)
-        # load_duration: time spent loading the model
-        # prompt_eval_duration: time spent evaluating the prompt
-        # eval_duration: time spent generating the response
+        prompt_eval_ns = metrics.get("prompt_eval_duration")
+        load_duration_ns = metrics.get("load_duration")
         
-        prompt_eval_ns = response_data.get("prompt_eval_duration")
-        time_to_first_token_ms = (
-            prompt_eval_ns / 1_000_000 if prompt_eval_ns is not None else None
-        )
+        # If streaming didn't give TTFT (e.g. empty content?), fallback to prompt_eval
+        ttft = result["ttft_ms"]
+        if ttft is None and prompt_eval_ns is not None:
+            ttft = prompt_eval_ns / 1_000_000
+            
+        # We can pass extra metrics if needed, but for now we just map to NormalizedGenerationResult
         
         return NormalizedGenerationResult(
-            content=response_data.get("message", {}).get("content", ""),
-            prompt_tokens=response_data.get("prompt_eval_count"),
-            completion_tokens=response_data.get("eval_count"),
+            content=result["content"],
+            prompt_tokens=metrics.get("prompt_eval_count"),
+            completion_tokens=metrics.get("eval_count"),
             total_latency_ms=total_latency_ms,
-            time_to_first_token_ms=time_to_first_token_ms
+            time_to_first_token_ms=ttft
         )
