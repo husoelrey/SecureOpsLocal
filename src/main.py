@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from src.api.knowledge import router as knowledge_router
 from src.api.upload import router as upload_router
-
+from src.api.system import router as system_router
 from contextlib import asynccontextmanager
 from src.job_runner import job_runner
 
@@ -25,9 +25,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(system_router, tags=["system"])
 app.include_router(upload_router, prefix="/api", tags=["upload"])
 app.include_router(knowledge_router, prefix="/api", tags=["knowledge"])
-
-@app.get("/health")
-def health_check() -> dict[str, str]:
-    return {"status": "ok"}
