@@ -55,14 +55,14 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 
 ## P3 — Local knowledge base and RAG
 
-- [ ] Create and audit the authoritative source-license manifest.
-- [ ] Implement safe PDF, Markdown, and plain-text ingestion.
-- [ ] Implement heading-aware chunking with source and page/section metadata.
-- [ ] Implement deterministic retrieval-query construction without sensitive identifiers.
-- [ ] Implement TF-IDF and cosine-similarity retrieval.
-- [ ] Implement context packing and source-diversity limits.
-- [ ] Validate every citation against the retrieved chunk set and database.
-- [ ] Complete retrieval-quality and knowledge prompt-injection tests.
+- [x] Create and audit the authoritative source-license manifest.
+- [x] Implement safe PDF, Markdown, and plain-text ingestion.
+- [x] Implement heading-aware chunking with source and page/section metadata.
+- [x] Implement deterministic retrieval-query construction without sensitive identifiers.
+- [x] Implement TF-IDF and cosine-similarity retrieval.
+- [x] Implement context packing and source-diversity limits.
+- [x] Validate every citation against the retrieved chunk set and database.
+- [x] Complete retrieval-quality and knowledge prompt-injection tests.
 
 ## P4 — Provider-independent incident analysis
 
