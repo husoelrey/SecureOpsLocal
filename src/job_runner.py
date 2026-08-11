@@ -48,7 +48,7 @@ class JobRunner:
             "result": None,
             "error": None
         }
-        logger.info(f"Job {job_id} submitted.")
+        logger.info("Job submitted", extra={"job_id": job_id, "stage": "submit", "status": "pending"})
         return job_id
 
     def get_job_status(self, job_id: str) -> Dict[str, Any]:
@@ -68,7 +68,7 @@ class JobRunner:
                 kwargs = job_item["kwargs"]
 
                 self.jobs[job_id]["status"] = "running"
-                logger.info(f"Job {job_id} started.")
+                logger.info("Job started", extra={"job_id": job_id, "stage": "start", "status": "running"})
 
                 try:
                     if asyncio.iscoroutinefunction(func):
@@ -78,18 +78,18 @@ class JobRunner:
                     
                     self.jobs[job_id]["status"] = "completed"
                     self.jobs[job_id]["result"] = result
-                    logger.info(f"Job {job_id} completed.")
+                    logger.info("Job completed", extra={"job_id": job_id, "stage": "end", "status": "completed"})
                 except Exception as e:
                     self.jobs[job_id]["status"] = "failed"
                     self.jobs[job_id]["error"] = str(e)
-                    logger.error(f"Job {job_id} failed: {e}")
+                    logger.error("Job failed", extra={"job_id": job_id, "stage": "end", "status": "failed", "error_code": type(e).__name__})
                 finally:
                     self.queue.task_done()
             except asyncio.CancelledError:
-                logger.info("Job runner worker cancelled.")
+                logger.info("Job runner worker cancelled.", extra={"stage": "shutdown", "status": "cancelled"})
                 break
             except Exception as e:
-                logger.error(f"Unexpected error in job runner worker: {e}")
+                logger.error("Unexpected error in job runner worker", extra={"stage": "error", "error_code": type(e).__name__})
 
 # Global job runner instance
 job_runner = JobRunner()

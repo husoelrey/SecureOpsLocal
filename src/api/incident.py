@@ -18,6 +18,9 @@ from src.parser.ssh import SSHAuthLogParser
 from src.rag.query import build_retrieval_query
 from src.rag.retriever import TFIDFRetriever
 from src.rag.store import global_knowledge_store
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -128,6 +131,7 @@ async def submit_incident_analysis(file: UploadFile = File(...)):
 
     # Submit job
     try:
+        logger.info("Submitting incident analysis job", extra={"incident_id": job_id, "stage": "submit", "file_size": total_size})
         await job_runner.submit_job(
             process_incident, 
             tmp_path_str, 
@@ -147,8 +151,10 @@ async def submit_incident_analysis(file: UploadFile = File(...)):
         finally:
             db.close()
             
+        logger.error("Job queue is full", extra={"incident_id": job_id, "stage": "submit", "error_code": "queue_full"})
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Job queue is full")
 
+    logger.info("Incident analysis submitted successfully", extra={"incident_id": job_id, "stage": "accepted"})
     return {"incident_id": job_id, "status": "pending", "message": "Incident analysis submitted"}
 
 
