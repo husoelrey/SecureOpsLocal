@@ -232,3 +232,9 @@ lastlog*
 !examples/synthetic/**/*.log.*
 !examples/version-controlled/**/*.log
 !examples/version-controlled/**/*.log.*
+
+# Environments
+.env
+.venv
+env/
+venv/
