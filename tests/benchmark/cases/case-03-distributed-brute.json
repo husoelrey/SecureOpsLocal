@@ -1,0 +1,134 @@
+{
+  "case_id": "case-03-distributed-brute",
+  "description": "Distributed brute force from multiple IPs targeting one user",
+  "analysis": {
+    "total_lines": 300,
+    "unparsed_lines": 5,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T10:10:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "198.51.100.0",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T10:00:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.1",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:01:00+00:00",
+        "last_seen": "2026-08-12T10:01:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.2",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:02:00+00:00",
+        "last_seen": "2026-08-12T10:02:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.3",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:03:00+00:00",
+        "last_seen": "2026-08-12T10:03:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.4",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:04:00+00:00",
+        "last_seen": "2026-08-12T10:04:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.5",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:05:00+00:00",
+        "last_seen": "2026-08-12T10:05:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.6",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:06:00+00:00",
+        "last_seen": "2026-08-12T10:06:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.7",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:07:00+00:00",
+        "last_seen": "2026-08-12T10:07:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.8",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:08:00+00:00",
+        "last_seen": "2026-08-12T10:08:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      },
+      {
+        "ip": "198.51.100.9",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:09:00+00:00",
+        "last_seen": "2026-08-12T10:09:30+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      }
+    ],
+    "limitations": [
+      "Timezone assumed UTC due to lack of offset in log"
+    ]
+  },
+  "chunks": [
+    {
+      "chunk_id": "cisa-ssh-guidance",
+      "document_id": "doc-cisa-ssh",
+      "source_title": "CISA SSH Best Practices",
+      "section_or_page": "Page 5",
+      "content": "SSH brute forcing from automated scripts is common. Organizations should monitor for rapid successive authentication failures (e.g., >10 per minute) targeting root or administrative accounts.",
+      "word_count": 26
+    },
+    {
+      "chunk_id": "mitre-t1110",
+      "document_id": "doc-mitre",
+      "source_title": "MITRE ATT&CK T1110",
+      "section_or_page": "Brute Force",
+      "content": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained.",
+      "word_count": 21
+    }
+  ],
+  "expected_risk_level": "medium"
+}

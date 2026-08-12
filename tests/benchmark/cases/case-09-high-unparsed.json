@@ -1,0 +1,36 @@
+{
+  "case_id": "case-09-high-unparsed",
+  "description": "Log file with mostly unparsed lines and one failure",
+  "analysis": {
+    "total_lines": 10000,
+    "unparsed_lines": 9990,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T10:05:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "10.0.0.99",
+        "failed_attempts": 5,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T10:05:00+00:00",
+        "users_attempted": [
+          "admin"
+        ]
+      }
+    ],
+    "limitations": [
+      "Extremely high number of unparsed lines suggests log corruption or unsupported format"
+    ]
+  },
+  "chunks": [
+    {
+      "chunk_id": "nist-800-61-r3-sec3",
+      "document_id": "doc-nist-800-61",
+      "source_title": "NIST SP 800-61 Rev. 3",
+      "section_or_page": "Section 3.1: Incident Indicators",
+      "content": "Multiple failed login attempts from an unknown IP address followed by a successful login may indicate a brute force attack resulting in compromised credentials.",
+      "word_count": 25
+    }
+  ],
+  "expected_risk_level": "medium"
+}

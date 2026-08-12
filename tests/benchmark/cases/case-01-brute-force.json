@@ -1,0 +1,44 @@
+{
+  "case_id": "case-01-brute-force",
+  "description": "Standard brute force attack with no success",
+  "analysis": {
+    "total_lines": 50,
+    "unparsed_lines": 0,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T10:02:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "192.168.1.100",
+        "failed_attempts": 45,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T10:02:00+00:00",
+        "users_attempted": [
+          "root",
+          "admin",
+          "test"
+        ]
+      }
+    ],
+    "limitations": []
+  },
+  "chunks": [
+    {
+      "chunk_id": "nist-800-61-r3-sec3",
+      "document_id": "doc-nist-800-61",
+      "source_title": "NIST SP 800-61 Rev. 3",
+      "section_or_page": "Section 3.1: Incident Indicators",
+      "content": "Multiple failed login attempts from an unknown IP address followed by a successful login may indicate a brute force attack resulting in compromised credentials.",
+      "word_count": 25
+    },
+    {
+      "chunk_id": "cisa-ssh-guidance",
+      "document_id": "doc-cisa-ssh",
+      "source_title": "CISA SSH Best Practices",
+      "section_or_page": "Page 5",
+      "content": "SSH brute forcing from automated scripts is common. Organizations should monitor for rapid successive authentication failures (e.g., >10 per minute) targeting root or administrative accounts.",
+      "word_count": 26
+    }
+  ],
+  "expected_risk_level": "medium"
+}
