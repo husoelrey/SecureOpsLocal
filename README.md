@@ -1,110 +1,47 @@
-# SecureOps Local — Air-Gapped-Ready Incident Review Assistant
+# SecureOps Local — The Air-Gapped AI Security Blueprint
 
-SecureOps Local is a local-first, air-gapped-ready defensive incident-review assistant for Linux SSH authentication logs. It safely accepts an untrusted log, extracts deterministic facts through a strict Python parser, retrieves relevant local security guidance via a local RAG implementation, and asks a selected local LLM deployment profile for a cautious, cited assessment.
+SecureOps Local is fundamentally more than an SSH log analyzer. It is a **production-ready, local-first blueprint** demonstrating how enterprises can safely leverage Large Language Models (LLMs) for highly sensitive security operations **without data leakage** and **without AI hallucinations**.
 
-The project demonstrates a fundamentally different approach to LLM security analysis: **separating deterministic facts from model interpretation**. Instead of trusting an LLM to count log events or identify IP addresses accurately (which LLMs frequently hallucinate), SecureOps Local builds an exact mathematical and timeline breakdown of the log, and only uses the LLM to interpret those proven facts against authoritative security literature.
+While the current MVP uses Linux SSH authentication logs as a proof of concept, the true value of this project lies in its **Deterministic AI Architecture**. It proves that you can run deep security analysis on private infrastructure, strictly constraining the AI to reason *only* about proven mathematical facts against official security doctrines.
 
-## Key Principles & Product Boundary
+---
 
-* **Locality and Privacy**: The core product has no cloud LLM fallback. Raw logs, raw prompts, full model responses, and model reasoning traces must never be sent to a third party, logged, or persisted.
-* **Deterministic Truth**: The LLM must not calculate addresses, usernames, timestamps, success/failure counts, repetition windows, or other parser facts. Parser truth always wins. Reject a model assessment that conflicts with it.
-* **Cautious Security Language**: The LLM must never claim that a log pattern definitively proves an attack or compromise. It expresses evidence-supported possibilities, explicit limitations, and explains risk using observed facts and retrieved guidance.
-* **Defensive-only Behavior**: The system does not execute commands from model or file content. It does not block addresses, change firewall rules, disable accounts, scan targets, exploit systems, or automate remediation.
-* **Not a Training Pipeline**: The project does not train or fine-tune an LLM. RAG retrieves document chunks and supplies them as context to an existing local model.
+## 🚀 Why This Matters: The Architectural Value
 
-## What This Project Does
+The industry standard of "pasting raw logs into a cloud AI" is fundamentally broken for enterprise security. It violates data privacy, risks cloud exfiltration, and suffers from hallucinations (where LLMs invent IP addresses, miscount events, or hallucinate timelines).
 
-This project answers the following operational and engineering questions:
+**SecureOps Local solves this through four architectural pillars:**
 
-1. **Operational**: How can junior SOC analysts, system administrators, and security students perform a repeatable, initial review of raw SSH authentication logs without exposing sensitive internal network data to a public cloud AI?
-2. **Engineering**: How do different local deployment profiles (e.g., Microsoft Foundry Local vs. Ollama, specialized security models vs. general-purpose models) compare in terms of structured-output reliability, latency, memory use, and cautious interpretation?
+1. **Deterministic Constraints (Zero Hallucination)**: The AI is legally forbidden from doing math. Instead of trusting the LLM to count log events, a strict Python Parser extracts the exact mathematical truth (IPs, event counts, time windows). The AI is only used to *reason* about these proven facts.
+2. **Air-Gapped Privacy & Local RAG**: No cloud fallbacks. The system reads official PDF/Markdown security literature (NIST, OWASP) locally using a lightweight TF-IDF retrieval system. The LLM grounds its answers purely in your local, private knowledge base.
+3. **Strict Structured Output (Schema Compliance)**: The AI does not reply with a chatty, unstructured story. It is forced to respond in a rigid, machine-readable JSON format (`ModelAssessment`) that downstream systems can actually use.
+4. **Modular & Extensible (Tak-Çalıştır)**: The architecture is entirely decoupled. Today it reads SSH logs. Tomorrow, by simply swapping the Parser module, this exact same AI pipeline can analyze AWS CloudTrail, Windows Event Logs, or Nginx traffic without changing a single line of AI reasoning logic.
 
-This is a decision-support prototype. It is **not** a SIEM, IDS, IPS, antivirus product, or automated remediation system. 
+---
 
-## Glossary
-
-| Term | Meaning in this project |
-|---|---|
-| **IncidentReport** | The final assembled JSON report containing parser truth, validated model assessment, verified citations, and safe runtime metadata. |
-| **ModelAssessment** | The strict Pydantic v2 schema representing the LLM's constrained interpretation (summary, risk level, reasoning, citations). |
-| **Parser Facts** | Deterministic outputs generated by pure Python (e.g., unique IPs, event counts, time windows). |
-| **Deployment Profile** | A specific combination of a model identifier, quantization, runtime (Foundry/Ollama), execution backend, and prompt/schema versions. |
-| **Foundry Local** | Microsoft's local inference runtime, utilizing Windows hardware acceleration (e.g., Intel Arc). |
-| **Ollama** | A widespread local inference runtime used as a reference implementation. |
-| **RAG** | Retrieval-Augmented Generation. Used here to ground the LLM's interpretation in official security literature. |
-| **TF-IDF** | Term Frequency-Inverse Document Frequency. Used as the deterministic baseline for retrieving relevant document chunks without relying on embeddings or vector databases. |
-| **Reasoning Trace** | The `<think>...</think>` output generated by reasoning models (like Foundation-Sec). SecureOps Local actively strips and destroys these to maintain privacy. |
-
-## Methodology & Architecture Pipelines
+## 🧠 Methodology & Pipelines
 
 SecureOps Local operates through a strictly phased, modular monolith architecture built on FastAPI, SQLite, SQLAlchemy 2, and Alembic.
 
-### 1. Deterministic SSH Analysis Pipeline (P2)
-Raw SSH logs (up to 5 MiB) are treated as hostile. They are streamed, validated, and processed by the `SSHAuthLogParser`. 
+### 1. Deterministic Extraction Pipeline (The "Truth")
+Raw logs (treated as hostile) are streamed and processed by the `SSHAuthLogParser`. 
+* **Fact Generation**: Parses IPv4/IPv6 sources, failed passwords, and invalid-user variants.
+* **Aggregation**: Generates deterministic stats: total events, failures, successes, unique sources.
+* **Result**: An immutable mathematical snapshot of the incident.
 
-* **Event Extraction**: Parses IPv4/IPv6 sources, failed passwords, accepted passwords/public keys, invalid-user variants, and common syslog/journald prefixes.
-* **Aggregation**: Generates deterministic stats: total events, failures, successes, unique sources, targeted users, and first/last timestamps.
-* **Pattern Detection**: Identifies configurable patterns (e.g., at least five failures from one source within five minutes; success after repeated failures). These are labeled as *patterns*, never confirmed attacks.
+### 2. Local Knowledge Base (The "Law")
+Instead of relying on the LLM's internal weights, the system grounds the model using local literature (NIST SP 800-61 Rev. 3, CISA Playbooks).
+* **Chunking & Retrieval**: Uses TF-IDF and cosine similarity to find the exact security rules relevant to the parser's facts.
+* **Citation Validation**: Every citation generated by the LLM is programmatically validated against the retrieved chunks. Invented citations are instantly rejected.
 
-### 2. Local Knowledge Base & RAG Pipeline (P3)
-Instead of relying on the LLM's internal (and potentially hallucinated) knowledge, the system grounds the model using local literature (NIST SP 800-61 Rev. 3, CISA Playbooks, MITRE ATT&CK, OWASP, etc.).
+### 3. AI Analysis Pipeline (The "Judge")
+The application communicates with local runtimes (Ollama, Microsoft Foundry) via a common `LocalLLMProvider` contract.
+* **Strict Validation**: The LLM output must perfectly match a Pydantic schema. If validation fails, the system performs a controlled repair request.
+* **Reasoning Stripping**: Models that output internal reasoning (e.g., Foundation-Sec) have their reasoning traces actively stripped (`<think>...</think>`) before the output is processed or persisted to ensure absolute privacy.
 
-* **Ingestion**: Safely extracts text from PDF, Markdown, and plain text. Preserves heading paths, page/section references, and content hashes.
-* **Chunking**: Uses 400-word chunks with a 60-word overlap.
-* **Retrieval**: Uses TF-IDF and cosine similarity. Queries are deterministically constructed from the parser statistics (excluding IPs and usernames for privacy).
-* **Citation Validation**: Every citation generated by the LLM is programmatically checked against the retrieved chunks. If the LLM invents a citation, the output is rejected.
+---
 
-### 3. Provider-Independent LLM Pipeline (P4)
-The application communicates with runtimes via a common `LocalLLMProvider` contract, ensuring business logic never couples to a specific engine.
-
-* **Adapters**: Implements adapters for both Ollama and Microsoft Foundry Local.
-* **Strict Validation**: The LLM output must perfectly match the `ModelAssessment` Pydantic schema. If validation fails, the system performs *exactly one* controlled repair request, injecting the error message back to the LLM. A second failure results in an `invalid_model_output` state.
-* **Reasoning Stripping**: Models that output internal reasoning (e.g., Foundation-Sec) have their reasoning traces stripped via regex (`<think>...</think>`) before the output is processed, logged, or persisted.
-
-## Deployment Topology & Runtimes
-
-The preferred deployment topology spans the Windows host and Docker:
-
-```text
-Windows host
-├── Foundry Local runtime and model cache (Hardware Accelerated)
-├── Ollama runtime and model cache
-└── Docker Desktop
-    └── SecureOps Local container
-        ├── FastAPI
-        ├── Deterministic Parser
-        ├── RAG & Citation Validation
-        ├── Bounded Job Runner
-        └── SQLite volume
-```
-
-*Note: Models and execution caches live strictly on the Windows host. Docker connects to the host via `host.docker.internal`. Foundry Local is never forced into a container if it compromises hardware acceleration.*
-
-### Model Candidates
-
-The project is designed to benchmark the following candidate profiles:
-1. **Foundation-Sec-8B-Reasoning Q4_K_M** (via Ollama): The domain-specialized cybersecurity candidate. Built on Llama 3.1.
-2. **Qwen3.5 9B Q4_K_M** (via Ollama): The general-purpose quality reference.
-3. **Microsoft Foundry Local Profile**: Resolved dynamically from the device catalog to utilize local Windows execution providers.
-
-## Benchmark Methodology (P6 - Upcoming)
-
-A core objective of SecureOps Local is to objectively benchmark local deployment profiles. 
-
-**Synthetic Cases**: Profiles are evaluated against at least 10 version-controlled synthetic cases (normal logins, repeated failures, invalid users, log prompt-injection attempts, IPv6, malformed input).
-
-**Identical Evidence**: Every profile receives the exact same synthetic input fixture, parser result, retrieved top-k chunks, prompt/schema versions, and generation settings (temperature `0`, seed `42`, context limit `8192`).
-
-**Measured Metrics**:
-* **Quality**: Schema compliance (first attempt and post-repair), citation validity, unsupported claim count, recommendation completeness, risk consistency.
-* **Performance**: Cold-load time, time to first token (TTFT), total latency, tokens per second, and peak memory (RSS).
-* **Manual Rubric**: Groundedness, readability, cautious language compliance (0-2 scale).
-
-*Winner Selection*: A profile is only eligible to become the default if it reaches 100% schema compliance, 100% citation validity, and zero unsupported deterministic claims. Latency is only a tie-breaker, not the primary goal.
-
-## Environment and Reproducibility
-
-### Setup & Installation
+## 💻 Environment & Setup
 
 SecureOps Local relies entirely on the Python standard library wherever possible to guarantee offline/air-gapped portability.
 
@@ -114,13 +51,11 @@ SecureOps Local relies entirely on the Python standard library wherever possible
    cd SecureOpsLocal
    ```
 
-2. **Create a virtual environment (Python 3.12 Target)**
+2. **Create a virtual environment (Python 3.12/3.13 Target)**
    ```bash
    python -m venv .venv
-   # Windows
-   .venv\Scripts\activate
-   # Linux/Mac
-   source .venv/bin/activate
+   .venv\Scripts\activate      # Windows
+   source .venv/bin/activate   # Linux/Mac
    ```
 
 3. **Install Dependencies**
@@ -129,61 +64,40 @@ SecureOps Local relies entirely on the Python standard library wherever possible
    python -m pip install -r requirements.txt
    ```
 
-### Development & Validation
+4. **IDE Configuration (VS Code / Antigravity)**
+   * Select the Python interpreter inside your `.venv`.
+   * The repository includes a `pyrightconfig.json` and `.vscode/settings.json` to ensure strict static analysis tools correctly identify the workspace root.
 
-Development follows a strict validation ladder. You do not need to download massive model weights to run the core deterministic tests.
+---
 
-```bash
-# Run unit and integration tests (uses fake/mocked providers)
-python -m pytest
+## 📊 Deployment & Benchmark Methodology
 
-# Run linting, formatting, and static typing
-python -m ruff check src tests
-python -m ruff format src tests
-python -m mypy src
-```
+The preferred deployment topology spans the Windows host (for Hardware Accelerated AI) and Docker (for the FastAPI Application).
 
-## Repository Structure
+**Benchmark Winner (Default Profile):**
+Following exhaustive benchmarking (Phase P6) against 10 synthetic SSH attack cases, the system measures Time-to-First-Token (TTFT), memory usage, citation validity, and schema compliance. 
 
-```text
-.
-├── docs/
-│   └── context/                 # Architecture, specifications, workflows, and roadmap
-├── src/
-│   ├── api/                     # FastAPI routes and middleware (P5)
-│   ├── core/                    # Configuration and base models
-│   ├── db/                      # SQLAlchemy models and Alembic migrations
-│   ├── llm/                     # Provider adapters (Ollama, Foundry), analyzer, and prompts
-│   ├── parser/                  # Deterministic SSH parser and aggregator
-│   ├── rag/                     # Ingestion, chunking, TF-IDF retrieval, and queries
-│   └── schemas/                 # Strict Pydantic domain models
-├── tests/                       # Unit tests, E2E tests, privacy checks, and RAG quality tests
-├── PLAN.md                      # Executable project checklist
-└── README.md
-```
+* The system is designed to seamlessly toggle between **Ollama** (e.g., Qwen, Foundation) and **Microsoft Foundry Local** via configuration.
 
-## Current Status
+---
+
+## 📈 Current Project Status
 
 | Phase | Description | Status |
 |---|---|---|
-| **P0** | Repository governance and project context | Complete |
-| **P1** | Local runtime and model profiles | Complete |
-| **P2** | Deterministic SSH analysis core | Complete |
-| **P3** | Local knowledge base and RAG | Complete |
-| **P4** | Provider-independent incident analysis | Complete |
-| **P5** | API, persistence, and job orchestration | Not started |
-| **P6** | Deployment-profile benchmark and default selection | Not started |
-| **P7** | Offline and GitHub readiness | Not started |
+| **P0** | Repository governance and project context | ✅ Complete |
+| **P1** | Local runtime and model profiles | ✅ Complete |
+| **P2** | Deterministic SSH analysis core | ✅ Complete |
+| **P3** | Local knowledge base and RAG | ✅ Complete |
+| **P4** | Provider-independent incident analysis | ✅ Complete |
+| **P5** | API, persistence, and job orchestration | ✅ Complete |
+| **P6** | Deployment-profile benchmark & selection | ✅ Complete |
+| **P7** | Offline and GitHub readiness | 🚧 Next Up |
 
-## Data Provenance and Licensing
+---
 
-* **Application Code**: Licensed under the repository's `LICENSE`.
-* **Knowledge Sources**: Documents placed in the knowledge base (e.g., NIST SP 800-61, MITRE guidelines) retain their original organizational licenses. All redistributed content must be verified for licensing compliance.
-* **Model Weights**: Foundational weights (e.g., Llama 3.1, Qwen) retain their respective community licenses. This repository **does not** redistribute model weights. 
+## 📜 Data Provenance, Privacy & Limitations
 
-## Limitations & Future Work
-
-1. **Parser Scope**: The MVP only parses SSH authentication logs. Nmap, Nginx, or application-specific logs are explicitly deferred.
-2. **Vector DB**: A dedicated vector database and embedding retrieval system are deferred. The current TF-IDF baseline is designed to prove the pipeline works deterministically first.
-3. **Imbalance & Edge Cases**: Log data can be highly imbalanced. The deterministic parser flags activity, but the LLM is explicitly forbidden from making definitive attribution claims.
-4. **Offline Manifest**: A signed offline-bundle manifest will be provided in P7 to ensure absolute integrity when transferring the tool across an air gap.
+* **Absolute Privacy**: Raw logs, raw prompts, full model responses, and reasoning traces are **never** persisted to disk or logs.
+* **Defensive-only**: The system explicitly does not execute block commands, change firewall rules, or automate remediation. It is a decision-support tool.
+* **Licensing**: Foundational weights (e.g., Llama 3.1, Qwen) retain their community licenses. This repository **does not** redistribute model weights. Knowledge documents (NIST) retain their organizational licenses.
