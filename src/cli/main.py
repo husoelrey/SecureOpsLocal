@@ -18,12 +18,13 @@ if sys.platform == "win32":
 
 from src.cli.analyze import analyze_log_file
 from src.cli.knowledge import knowledge_app
+from src.cli.watch import watch_log_file
 
 __version__ = "0.1.0"
 
 app = typer.Typer(
     name="secureops",
-    help="SecureOps Local — Cautious, local incident-review decision support for Linux SSH logs.",
+    help="SecureOps Local — Cautious, local incident-review decision support for Linux SSH, Windows, Nginx, and AWS logs.",
     no_args_is_help=True,
     add_completion=False,
 )
@@ -33,6 +34,7 @@ console = Console()
 # Register subcommands and commands
 app.add_typer(knowledge_app, name="knowledge")
 app.command("analyze")(analyze_log_file)
+app.command("watch")(watch_log_file)
 
 
 def version_callback(value: bool) -> None:
@@ -40,7 +42,7 @@ def version_callback(value: bool) -> None:
         console.print(
             Panel(
                 f"[bold cyan]SecureOps Local[/bold cyan] [green]v{__version__}[/green]\n"
-                "[dim]Local incident-review decision-support CLI for Linux SSH authentication logs.[/dim]",
+                "[dim]Local incident-review decision-support CLI for multi-source security logs.[/dim]",
                 title="[bold blue]Version Info[/bold blue]",
                 expand=False,
             )

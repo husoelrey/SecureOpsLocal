@@ -1,5 +1,6 @@
 from src.rag.chunking import chunk_document, split_text_with_overlap
 
+
 def test_split_text_with_overlap():
     text = "word " * 100
     chunks = split_text_with_overlap(text, max_words=60, overlap=10)

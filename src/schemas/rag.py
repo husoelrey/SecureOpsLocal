@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class IngestedDocument(BaseModel):
     filename: str = Field(..., description="The original filename")
     content: str = Field(..., description="The extracted text content")

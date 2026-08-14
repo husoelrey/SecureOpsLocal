@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,9 +7,9 @@ from pathlib import Path
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.llm.ollama import OllamaProvider
-from src.llm.foundry import FoundryLocalProvider
 from src.llm.analyzer import IncidentAnalyzer
+from src.llm.foundry import FoundryLocalProvider
+from src.llm.ollama import OllamaProvider
 from src.llm.scorers import QualityScorer
 from src.llm.telemetry import TelemetryTracker, calculate_token_rate
 from src.schemas.analysis import LogAnalysis

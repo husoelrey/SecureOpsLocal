@@ -1,7 +1,8 @@
-import psutil
-import time
 import os
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import psutil
+
 
 class TelemetryTracker:
     """Tracks system telemetry during model execution, such as RAM usage."""

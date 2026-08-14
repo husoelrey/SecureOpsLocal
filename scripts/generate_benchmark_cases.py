@@ -1,6 +1,7 @@
 import json
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+
 
 def generate_cases():
     cases_dir = os.path.join("tests", "benchmark", "cases")

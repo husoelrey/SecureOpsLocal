@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any, List
+from typing import Any, Dict
+
 from src.schemas.incident_report import IncidentReportCreate
 
 logger = logging.getLogger(__name__)

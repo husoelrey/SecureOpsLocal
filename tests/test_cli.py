@@ -1,12 +1,12 @@
 import json
 import tempfile
-from unittest.mock import AsyncMock, patch
 import uuid
 from pathlib import Path
-from typer.testing import CliRunner
+from unittest.mock import AsyncMock, patch
 
 from src.cli.main import app
 from src.schemas.incident_report import IncidentReportCreate
+from typer.testing import CliRunner
 
 runner = CliRunner()
 

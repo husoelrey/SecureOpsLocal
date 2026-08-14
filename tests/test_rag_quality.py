@@ -1,6 +1,5 @@
 from src.rag.chunking import chunk_document
 from src.rag.retriever import TFIDFRetriever
-from src.schemas.rag import DocumentChunk
 
 
 def test_retrieval_quality_brute_force():

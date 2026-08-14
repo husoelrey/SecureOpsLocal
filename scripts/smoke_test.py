@@ -1,7 +1,8 @@
 import json
-import urllib.request
-import urllib.error
 import sys
+import urllib.error
+import urllib.request
+
 
 def run_smoke_test():
     url = "http://127.0.0.1:11434/api/generate"

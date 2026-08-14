@@ -60,7 +60,7 @@ async def upload_knowledge_document(
         filename = file.filename or "unknown"
         
         # Parse and extract text
-        doc = parse_document(tmp_path, filename, file_hash)
+        _ = parse_document(tmp_path, filename, file_hash)
         
         # Here we will later call chunking and db persistence.
         # For now, we return success after ingestion validation.

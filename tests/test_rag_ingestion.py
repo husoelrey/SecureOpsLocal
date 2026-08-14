@@ -5,9 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-
 from src.main import app
-from src.rag.ingestion import extract_pdf, extract_text, parse_document
+from src.rag.ingestion import extract_pdf, extract_text
 
 client = TestClient(app)
 

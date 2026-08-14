@@ -12,3 +12,4 @@ python-multipart==0.0.9
 psutil==5.9.8
 typer==0.27.1
 rich==15.0.0
+watchdog==6.0.0
