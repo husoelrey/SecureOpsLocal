@@ -23,7 +23,7 @@ from src.parser.ssh import SSHAuthLogParser
 from src.parser.windows import WindowsEventLogParser
 from src.rag.packing import pack_context
 from src.rag.query import build_retrieval_query
-from src.rag.retriever import TFIDFRetriever
+from src.rag.retriever import SemanticRetriever
 from src.rag.service import load_all_rag_chunks
 from src.schemas.analysis import LogAnalysis
 from src.schemas.incident_report import IncidentReportCreate
@@ -334,7 +334,7 @@ def analyze_log_file(
         all_chunks = load_all_rag_chunks()
         if all_chunks:
             retrieval_query = build_retrieval_query(analysis)
-            retriever = TFIDFRetriever(all_chunks)
+            retriever = SemanticRetriever(all_chunks)
             retrieved = retriever.retrieve(retrieval_query, top_k=top_k)
             packed_chunks = pack_context(
                 retrieved, max_words=1500, max_chunks_per_source=2
