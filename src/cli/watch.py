@@ -17,6 +17,7 @@ from src.cli.analyze import (
     display_deterministic_facts,
     get_parser_for_log_type,
 )
+from src.integrations import send_syslog, send_webhook
 from src.llm.analyzer import IncidentAnalyzer
 from src.llm.base import LocalLLMProvider
 from src.llm.foundry import FoundryLocalProvider
@@ -42,8 +43,14 @@ def print_massive_alert_banner(
 ) -> None:
     """Render a massive, high-impact terminal security alert header."""
     header_text = Text()
-    header_text.append("🚨 🚨 🚨  CRITICAL SECURITY INCIDENT DETECTED  🚨 🚨 🚨\n", style="bold white on red blink")
-    header_text.append(f"INCIDENT ID: {incident_id}  |  LOG SOURCE: {log_type.upper()}\n", style="bold yellow")
+    header_text.append(
+        "🚨 🚨 🚨  CRITICAL SECURITY INCIDENT DETECTED  🚨 🚨 🚨\n",
+        style="bold white on red blink",
+    )
+    header_text.append(
+        f"INCIDENT ID: {incident_id}  |  LOG SOURCE: {log_type.upper()}\n",
+        style="bold yellow",
+    )
     header_text.append(
         f"THRESHOLD BREACHED: {event_count} failure/attack events recorded within {window_seconds}s (Threshold: {threshold})\n",
         style="bold white",
@@ -76,6 +83,8 @@ def handle_incident_breach(
     provider_name: str,
     base_url: Optional[str],
     top_k: int,
+    forward_syslog: Optional[str] = None,
+    webhook: Optional[str] = None,
 ) -> None:
     """Full incident response handler when the failure threshold is breached."""
     incident_id = f"inc_live_{uuid.uuid4().hex[:8]}"
@@ -95,13 +104,18 @@ def handle_incident_breach(
 
     # 3. RAG Retrieval
     packed_chunks = []
-    with console.status("[bold green]Retrieving relevant security guidance (NIST/CISA/OWASP)...[/bold green]", spinner="dots"):
+    with console.status(
+        "[bold green]Retrieving relevant security guidance (NIST/CISA/OWASP)...[/bold green]",
+        spinner="dots",
+    ):
         all_chunks = load_all_rag_chunks()
         if all_chunks:
             retrieval_query = build_retrieval_query(analysis)
             retriever = SemanticRetriever(all_chunks)
             retrieved = retriever.retrieve(retrieval_query, top_k=top_k)
-            packed_chunks = pack_context(retrieved, max_words=1500, max_chunks_per_source=2)
+            packed_chunks = pack_context(
+                retrieved, max_words=1500, max_chunks_per_source=2
+            )
 
     # 4. LLM Cautious Assessment
     provider: LocalLLMProvider
@@ -127,6 +141,31 @@ def handle_incident_breach(
                 )
             )
         display_assessment(report, packed_chunks)
+
+        # 5. SIEM Syslog Forwarding
+        if forward_syslog:
+            syslog_ok = send_syslog(forward_syslog, report, incident_id=incident_id)
+            if syslog_ok:
+                console.print(
+                    f"[bold green]✓ Real-time RFC 5424 Syslog forwarded to SIEM:[/bold green] [cyan]{forward_syslog}[/cyan]"
+                )
+            else:
+                console.print(
+                    f"[bold red][X] Failed to forward Syslog to:[/bold red] [yellow]{forward_syslog}[/yellow]"
+                )
+
+        # 6. Webhook Ticket Dispatch
+        if webhook:
+            webhook_ok = send_webhook(webhook, report, incident_id=incident_id)
+            if webhook_ok:
+                console.print(
+                    f"[bold green]✓ Automated incident ticket dispatched to webhook:[/bold green] [cyan]{webhook}[/cyan]"
+                )
+            else:
+                console.print(
+                    f"[bold red][X] Failed to deliver ticket to webhook:[/bold red] [yellow]{webhook}[/yellow]"
+                )
+
     except Exception as e:
         console.print(
             Panel(
@@ -200,6 +239,16 @@ def watch_log_file(
         "-k",
         help="Number of knowledge base chunks to retrieve.",
     ),
+    forward_syslog: Optional[str] = typer.Option(
+        None,
+        "--forward-syslog",
+        help="Target SIEM host:port to forward RFC 5424 Syslog report (e.g. 127.0.0.1:514).",
+    ),
+    webhook: Optional[str] = typer.Option(
+        None,
+        "--webhook",
+        help="Webhook endpoint URL for automated Jira/ServiceNow ticket creation.",
+    ),
 ) -> None:
     """
     Continuously tail a security log file in background daemon mode.
@@ -244,6 +293,8 @@ def watch_log_file(
             provider_name=provider_name,
             base_url=base_url,
             top_k=top_k,
+            forward_syslog=forward_syslog,
+            webhook=webhook,
         )
 
     engine = LogWatcherEngine(

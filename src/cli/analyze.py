@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from src.integrations import send_syslog, send_webhook
 from src.llm.analyzer import IncidentAnalyzer
 from src.llm.base import LocalLLMProvider
 from src.llm.foundry import FoundryLocalProvider
@@ -278,6 +279,16 @@ def analyze_log_file(
         "-k",
         help="Number of relevant knowledge base chunks to retrieve.",
     ),
+    forward_syslog: Optional[str] = typer.Option(
+        None,
+        "--forward-syslog",
+        help="Target SIEM host:port to forward RFC 5424 Syslog report (e.g. 127.0.0.1:514).",
+    ),
+    webhook: Optional[str] = typer.Option(
+        None,
+        "--webhook",
+        help="Webhook endpoint URL for automated Jira/ServiceNow ticket creation.",
+    ),
 ) -> None:
     """Analyze a security log file (SSH, Windows, Nginx, AWS), retrieve RAG guidance, and generate a cautious risk report."""
     validate_log_file(logfile)
@@ -389,3 +400,27 @@ def analyze_log_file(
             )
         except Exception as e:
             console.print(f"[bold red][X] Failed to export JSON report: {e}[/bold red]")
+
+    # 6. Forward Syslog if requested
+    if forward_syslog:
+        success = send_syslog(forward_syslog, report, incident_id=incident_id)
+        if success:
+            console.print(
+                f"[bold green]✓ RFC 5424 Syslog report forwarded to SIEM:[/bold green] [cyan]{forward_syslog}[/cyan]"
+            )
+        else:
+            console.print(
+                f"[bold red][X] Failed to forward Syslog report to:[/bold red] [yellow]{forward_syslog}[/yellow]"
+            )
+
+    # 7. Dispatch Webhook if requested
+    if webhook:
+        success = send_webhook(webhook, report, incident_id=incident_id)
+        if success:
+            console.print(
+                f"[bold green]✓ Incident ticket payload dispatched to webhook:[/bold green] [cyan]{webhook}[/cyan]"
+            )
+        else:
+            console.print(
+                f"[bold red][X] Failed to dispatch webhook to:[/bold red] [yellow]{webhook}[/yellow]"
+            )

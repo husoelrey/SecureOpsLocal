@@ -148,3 +148,51 @@ def test_cli_analyze_success_with_mock():
             data = json.loads(json_out.read_text(encoding="utf-8"))
             assert data["risk_level"] == "high"
             assert data["status"] == "completed"
+
+
+def test_cli_analyze_with_syslog_and_webhook():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        log_path = Path(tmp_dir) / "auth.log"
+        log_path.write_text(
+            "Aug 14 10:20:00 server sshd[101]: Failed password for admin from 192.168.1.50 port 1234 ssh2\n",
+            encoding="utf-8",
+        )
+
+        mock_report = IncidentReportCreate(
+            status="completed",
+            summary="Single failed login observed.",
+            observed_findings={"total_lines": 1},
+            possible_interpretations=["Isolated authentication failure."],
+            risk_level="LOW",
+            risk_reasoning="Single attempt.",
+            recommended_actions=["Monitor for further activity."],
+            citations=[],
+            limitations=[],
+            parser_statistics={"total_lines": 1, "unparsed_lines": 0},
+            model_information={"provider": "OllamaProvider", "model": "foundation-sec-8b"},
+            performance_metrics={},
+        )
+
+        with patch("src.cli.analyze.IncidentAnalyzer.analyze_incident", new_callable=AsyncMock) as mock_analyze, \
+             patch("src.cli.analyze.send_syslog", return_value=True) as mock_syslog, \
+             patch("src.cli.analyze.send_webhook", return_value=True) as mock_webhook:
+
+            mock_analyze.return_value = mock_report
+
+            result = runner.invoke(
+                app,
+                [
+                    "analyze",
+                    str(log_path),
+                    "--forward-syslog",
+                    "127.0.0.1:514",
+                    "--webhook",
+                    "https://webhook.example.com/alerts",
+                ],
+            )
+
+            assert result.exit_code == 0
+            assert "RFC 5424 Syslog report forwarded to SIEM" in result.stdout
+            assert "Incident ticket payload dispatched to webhook" in result.stdout
+            mock_syslog.assert_called_once()
+            mock_webhook.assert_called_once()
