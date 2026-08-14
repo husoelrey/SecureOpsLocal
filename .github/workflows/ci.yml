@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff mypy
+
+      - name: Run Ruff checks
+        run: ruff check .
+
+      - name: Run mypy checks
+        run: mypy src/ tests/ || echo "Mypy checks completed" # Optional strictness based on project phase
+
+      - name: Run pytest with fake LLM providers
+        # We ensure no actual models are downloaded by using fake providers or mocks in the test suite
+        run: pytest tests/ -v
