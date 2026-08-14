@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
+    "$SCRIPT_DIR/.venv/bin/python" -m src.cli.main "$@"
+elif [ -f "$SCRIPT_DIR/.venv/Scripts/python.exe" ]; then
+    "$SCRIPT_DIR/.venv/Scripts/python.exe" -m src.cli.main "$@"
+else
+    python3 -m src.cli.main "$@"
+fi

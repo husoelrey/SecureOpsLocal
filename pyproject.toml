@@ -1,3 +1,25 @@
+[project]
+name = "secureops-local"
+version = "0.1.0"
+description = "Local incident-review decision-support CLI for Linux SSH authentication logs."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.1",
+    "pydantic>=2.8.2",
+    "sqlalchemy>=2.0.31",
+    "alembic>=1.13.2",
+    "pypdf>=4.2.0",
+    "python-multipart>=0.0.9",
+    "psutil>=5.9.8",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+secureops = "src.cli.main:app"
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra -q"
