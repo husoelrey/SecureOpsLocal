@@ -1,7 +1,8 @@
 import hashlib
 import json
+import logging
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -9,11 +10,18 @@ from sqlalchemy.orm import Session
 from src.database import Base, SessionLocal, engine
 from src.models.knowledge import KnowledgeChunk, KnowledgeDocument
 from src.rag.chunking import chunk_document
+from src.rag.embeddings import LocalEmbeddingService
 from src.rag.ingestion import parse_document
+from src.rag.vector_store import LocalVectorStore
 from src.schemas.rag import DocumentChunk
+
+logger = logging.getLogger(__name__)
 
 MAX_KNOWLEDGE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MiB
 ALLOWED_KNOWLEDGE_EXTENSIONS = {".pdf", ".md", ".txt"}
+
+# Global in-memory vector store cache for fast local retrieval
+_global_vector_store: Optional[LocalVectorStore] = None
 
 
 class KnowledgeBaseError(Exception):
@@ -78,6 +86,7 @@ def compute_sha256(path: Path) -> str:
 def ingest_knowledge_document(
     file_path: Path,
     db: Session | None = None,
+    embedding_service: Optional[LocalEmbeddingService] = None,
 ) -> Tuple[KnowledgeDocument, list[KnowledgeChunk]]:
     """
     Ingests a PDF, Markdown, or text file into the knowledge base:
@@ -85,7 +94,8 @@ def ingest_knowledge_document(
     2. Checks for duplicate hash.
     3. Extracts and cleans text content.
     4. Performs heading-aware chunking.
-    5. Persists document metadata and chunks into SQLite.
+    5. Generates local semantic embeddings.
+    6. Persists document metadata and chunks into SQLite and updates local vector store.
     """
     init_knowledge_db()
     validate_file_path(file_path)
@@ -150,6 +160,11 @@ def ingest_knowledge_document(
 
         db.commit()
         db.refresh(db_doc)
+
+        # Update local semantic vector index
+        get_vector_store(db=db, embedding_service=embedding_service, force_reload=True)
+        logger.info(f"Successfully indexed {len(chunks)} chunks into local vector store.")
+
         return db_doc, db_chunks
 
     except Exception:
@@ -205,3 +220,23 @@ def load_all_rag_chunks(db: Session | None = None) -> list[DocumentChunk]:
     finally:
         if close_session:
             db.close()
+
+
+def get_vector_store(
+    db: Session | None = None,
+    embedding_service: Optional[LocalEmbeddingService] = None,
+    force_reload: bool = False,
+) -> LocalVectorStore:
+    """Retrieve or initialize the active local vector store populated with database chunks."""
+    global _global_vector_store
+
+    if _global_vector_store is not None and not force_reload:
+        return _global_vector_store
+
+    store = LocalVectorStore(embedding_service=embedding_service)
+    chunks = load_all_rag_chunks(db=db)
+    if chunks:
+        store.add_chunks(chunks)
+
+    _global_vector_store = store
+    return _global_vector_store

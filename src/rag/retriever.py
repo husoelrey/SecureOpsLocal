@@ -1,13 +1,69 @@
+import logging
 import math
 import re
 from collections import defaultdict
+from typing import List, Optional, Tuple
 
+from src.rag.embeddings import LocalEmbeddingService
+from src.rag.vector_store import LocalVectorStore
 from src.schemas.rag import DocumentChunk
+
+logger = logging.getLogger(__name__)
+
+
+class SemanticRetriever:
+    """
+    Local Semantic Vector Retriever using sentence-transformers and FAISS
+    (with cosine similarity fallback).
+    """
+
+    def __init__(
+        self,
+        chunks: List[DocumentChunk],
+        vector_store: Optional[LocalVectorStore] = None,
+        embedding_service: Optional[LocalEmbeddingService] = None,
+    ):
+        self.chunks = chunks
+        if vector_store is not None:
+            self.vector_store = vector_store
+        else:
+            self.vector_store = LocalVectorStore(embedding_service=embedding_service)
+            if chunks:
+                self.vector_store.add_chunks(chunks)
+
+    def retrieve(
+        self, query: str, top_k: int = 5, min_score: float = 0.0
+    ) -> List[Tuple[DocumentChunk, float]]:
+        """
+        Retrieve top-k relevant chunks based on dense semantic cosine similarity.
+        """
+        if not self.chunks:
+            return []
+
+        retrieved = self.vector_store.search(query, top_k=top_k)
+        results: List[Tuple[DocumentChunk, float]] = []
+
+        for r in retrieved:
+            if r.score >= min_score:
+                # Find matching chunk
+                chunk = self.vector_store.chunk_id_map.get(r.chunk_id)
+                if not chunk:
+                    chunk = DocumentChunk(
+                        chunk_id=r.chunk_id,
+                        document_id=r.document_id,
+                        source_title=r.source_title,
+                        section_or_page=r.section_or_page,
+                        content=r.content,
+                        word_count=len(r.content.split()),
+                    )
+                results.append((chunk, r.score))
+
+        return results
 
 
 class TFIDFRetriever:
     """
-    A deterministic, lightweight, and completely local TF-IDF MVP retriever.
+    A deterministic, lightweight, and completely local TF-IDF retriever.
     Implements TF-IDF scoring and cosine similarity without external dependencies.
     """
 

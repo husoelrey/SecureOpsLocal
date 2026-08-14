@@ -20,3 +20,12 @@ class DocumentChunk(BaseModel):
     section_or_page: str = Field(..., description="Heading path or page reference")
     content: str = Field(..., description="The chunk text")
     word_count: int = Field(..., description="Number of words in the chunk")
+
+
+class RetrievedChunk(BaseModel):
+    chunk_id: str
+    document_id: str
+    source_title: str
+    section_or_page: str
+    content: str
+    score: float
