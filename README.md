@@ -241,6 +241,8 @@ SecureOps Local enforces a strict trust boundary between deterministic truth and
    # Or create the Foundation-Sec profile using your local GGUF
    ollama create foundation-sec-8b-reasoning:q4_k_m -f Modelfile
    ```
+   > [!WARNING]
+   > If you configured a custom model path for strict air-gapping (e.g., `C:\AI_models`), ensure the `OLLAMA_MODELS` environment variable is set globally or in your active terminal before starting `ollama serve`. Otherwise, the CLI will return an HTTP 404 error when it attempts to query models.
 
 ### Running the CLI & API
 

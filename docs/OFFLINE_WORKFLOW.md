@@ -42,6 +42,9 @@ ollama pull foundation-sec-8b-reasoning:q4_k_m
 ollama pull qwen:0.5b
 ```
 
+> [!WARNING]
+> If you configured a custom model path (e.g., `C:\AI_models`) to isolate your runtime from default OS directories, ensure the `OLLAMA_MODELS` environment variable is set globally before starting `ollama serve`.
+
 **Foundry Local:**
 Resolve and cache the compatible Foundry model by downloading it through the Foundry CLI or directly to the configured Foundry cache directory (`C:\Users\husoelrey\Documents\docs\AI_models\foundry`).
 
