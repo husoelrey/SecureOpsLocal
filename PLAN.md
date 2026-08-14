@@ -80,25 +80,25 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 ## P5 — API, persistence, and job orchestration
 
 - [x] Add SQLite repositories and Alembic migrations.
-- [ ] Implement the bounded in-process job runner with concurrency one.
-- [ ] Implement health and model-discovery endpoints.
-- [ ] Implement knowledge ingestion and source-listing endpoints.
-- [ ] Implement incident submission and result endpoints.
-- [ ] Implement benchmark submission and result endpoints.
-- [ ] Implement structured, privacy-safe application logging.
-- [ ] Verify interruption, queue-full, provider-failure, and restart behavior.
-- [ ] Verify that raw security logs are never stored in SQLite.
+- [x] Implement the bounded in-process job runner with concurrency one.
+- [x] Implement health and model-discovery endpoints.
+- [x] Implement knowledge ingestion and source-listing endpoints.
+- [x] Implement incident submission and result endpoints.
+- [x] Implement benchmark submission and result endpoints.
+- [x] Implement structured, privacy-safe application logging.
+- [x] Verify interruption, queue-full, provider-failure, and restart behavior.
+- [x] Verify that raw security logs are never stored in SQLite.
 
 ## P6 — Deployment-profile benchmark and default selection
 
-- [ ] Create at least ten version-controlled synthetic SSH benchmark cases.
-- [ ] Freeze parser results, retrieved context, prompt, schema, and generation settings per case.
-- [ ] Implement deterministic quality scorers and the manual review rubric.
-- [ ] Measure cold load, warm inference, TTFT, total time, token rate, and defensible RAM metrics.
-- [ ] Benchmark Foundation, Qwen, and the resolved Foundry profile sequentially.
-- [ ] Include failures, repairs, timeouts, and unavailable metrics in published results.
-- [ ] Select the default profile using the documented quality-first gates.
-- [ ] Publish the benchmark table and reproducibility manifest.
+- [x] Create at least ten version-controlled synthetic SSH benchmark cases.
+- [x] Freeze parser results, retrieved context, prompt, schema, and generation settings per case.
+- [x] Implement deterministic quality scorers and the manual review rubric.
+- [x] Measure cold load, warm inference, TTFT, total time, token rate, and defensible RAM metrics.
+- [x] Benchmark Foundation, Qwen, and the resolved Foundry profile sequentially.
+- [x] Include failures, repairs, timeouts, and unavailable metrics in published results.
+- [x] Select the default profile using the documented quality-first gates.
+- [x] Publish the benchmark table and reproducibility manifest.
 
 ## P7 — Offline and GitHub readiness
 
