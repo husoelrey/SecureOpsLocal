@@ -1,0 +1,8 @@
+Aug 14 10:20:01 server1 sshd[12345]: Failed password for root from 192.168.1.100 port 34567 ssh2
+Aug 14 10:20:05 server1 sshd[12345]: Failed password for root from 192.168.1.100 port 34567 ssh2
+Aug 14 10:20:09 server1 sshd[12345]: Failed password for root from 192.168.1.100 port 34567 ssh2
+Aug 14 10:20:13 server1 sshd[12345]: Failed password for root from 192.168.1.100 port 34567 ssh2
+Aug 14 10:20:17 server1 sshd[12345]: Failed password for root from 192.168.1.100 port 34567 ssh2
+Aug 14 10:21:00 server1 sshd[12346]: Accepted publickey for admin from 10.0.0.50 port 45678 ssh2
+Aug 14 10:22:10 server1 sshd[12347]: Invalid user guest from 192.168.1.105 port 56789 ssh2
+Aug 14 10:22:15 server1 sshd[12347]: Failed password for invalid user guest from 192.168.1.105 port 56789 ssh2
