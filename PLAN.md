@@ -91,14 +91,14 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 
 ## P6 — Deployment-profile benchmark and default selection
 
-- [ ] Create at least ten version-controlled synthetic SSH benchmark cases.
-- [ ] Freeze parser results, retrieved context, prompt, schema, and generation settings per case.
-- [ ] Implement deterministic quality scorers and the manual review rubric.
-- [ ] Measure cold load, warm inference, TTFT, total time, token rate, and defensible RAM metrics.
-- [ ] Benchmark Foundation, Qwen, and the resolved Foundry profile sequentially.
-- [ ] Include failures, repairs, timeouts, and unavailable metrics in published results.
-- [ ] Select the default profile using the documented quality-first gates.
-- [ ] Publish the benchmark table and reproducibility manifest.
+- [x] Create at least ten version-controlled synthetic SSH benchmark cases.
+- [x] Freeze parser results, retrieved context, prompt, schema, and generation settings per case.
+- [x] Implement deterministic quality scorers and the manual review rubric.
+- [x] Measure cold load, warm inference, TTFT, total time, token rate, and defensible RAM metrics.
+- [x] Benchmark Foundation, Qwen, and the resolved Foundry profile sequentially.
+- [x] Include failures, repairs, timeouts, and unavailable metrics in published results.
+- [x] Select the default profile using the documented quality-first gates.
+- [x] Publish the benchmark table and reproducibility manifest.
 
 ## P7 — Offline and GitHub readiness
 

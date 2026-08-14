@@ -1,0 +1,34 @@
+{
+  "case_id": "case-05-normal-login",
+  "description": "Normal successful login from an internal IP",
+  "analysis": {
+    "total_lines": 1,
+    "unparsed_lines": 0,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T10:00:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "10.0.0.50",
+        "failed_attempts": 0,
+        "successful_attempts": 1,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T10:00:00+00:00",
+        "users_attempted": [
+          "jsmith"
+        ]
+      }
+    ],
+    "limitations": []
+  },
+  "chunks": [
+    {
+      "chunk_id": "nist-800-61-r3-sec3",
+      "document_id": "doc-nist-800-61",
+      "source_title": "NIST SP 800-61 Rev. 3",
+      "section_or_page": "Section 3.1: Incident Indicators",
+      "content": "Multiple failed login attempts from an unknown IP address followed by a successful login may indicate a brute force attack resulting in compromised credentials.",
+      "word_count": 25
+    }
+  ],
+  "expected_risk_level": "low"
+}

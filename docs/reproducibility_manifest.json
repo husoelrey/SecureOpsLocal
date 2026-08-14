@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-08-12T10:00:00Z",
+  "application": {
+    "commit_sha": "dc0eb86"
+  },
+  "environment": {
+    "os_build": "Windows 11",
+    "cpu": "Intel Core Ultra 5 125H",
+    "memory_gb": 15.52,
+    "gpu": "Intel Arc Graphics",
+    "execution_backend": "CPU/GPU (Mixed)"
+  },
+  "runtimes": {
+    "ollama": {
+      "version": "0.32.6"
+    },
+    "foundry_local": {
+      "version": "0.10.2"
+    }
+  },
+  "models": {
+    "foundation-sec": {
+      "id": "foundation-sec-8b-reasoning",
+      "quantization": "Q4_K_M"
+    },
+    "qwen": {
+      "id": "qwen3.5:9b",
+      "quantization": "Q4_K_M"
+    },
+    "foundry_profile": {
+      "id": "Phi-3-mini-4k-instruct"
+    }
+  },
+  "configurations": {
+    "prompt_version": "v1",
+    "schema_version": "v1",
+    "knowledge_snapshot": "2026-08-10",
+    "case_dataset": "10-cases-v1",
+    "generation_settings": {
+      "temperature": 0.0,
+      "seed": 42
+    }
+  },
+  "network_state": "Air-gapped ready (Local cache verified)"
+}

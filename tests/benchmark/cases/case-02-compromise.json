@@ -1,0 +1,43 @@
+{
+  "case_id": "case-02-compromise",
+  "description": "Brute force attack followed by a successful login",
+  "analysis": {
+    "total_lines": 100,
+    "unparsed_lines": 0,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T10:05:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "203.0.113.50",
+        "failed_attempts": 80,
+        "successful_attempts": 1,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T10:05:00+00:00",
+        "users_attempted": [
+          "ubuntu",
+          "root"
+        ]
+      }
+    ],
+    "limitations": []
+  },
+  "chunks": [
+    {
+      "chunk_id": "nist-800-61-r3-sec3",
+      "document_id": "doc-nist-800-61",
+      "source_title": "NIST SP 800-61 Rev. 3",
+      "section_or_page": "Section 3.1: Incident Indicators",
+      "content": "Multiple failed login attempts from an unknown IP address followed by a successful login may indicate a brute force attack resulting in compromised credentials.",
+      "word_count": 25
+    },
+    {
+      "chunk_id": "mitre-t1110",
+      "document_id": "doc-mitre",
+      "source_title": "MITRE ATT&CK T1110",
+      "section_or_page": "Brute Force",
+      "content": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained.",
+      "word_count": 21
+    }
+  ],
+  "expected_risk_level": "high"
+}

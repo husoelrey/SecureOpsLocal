@@ -64,7 +64,7 @@ This document records verified reality. Never describe planned work as complete.
 - Raw logs and model reasoning are not persisted
 - TF-IDF retrieval baseline
 - Swagger UI
-- Default model selected only after the benchmark
+- Default model selected only after the benchmark: Foundation-Sec-8B-Reasoning Q4_K_M
 - Tool-neutral feature branches with verified commits pushed after each completed feature
 
 ## Phase status
@@ -77,18 +77,18 @@ This document records verified reality. Never describe planned work as complete.
 | P3 — Local knowledge base and RAG | Complete | Ingestion, chunking, retrieval, packing, and tests implemented and passing |
 | P4 — Provider-independent incident analysis | Complete | Provider adapters, strict assembly, privacy guarantees, and E2E integration test complete |
 | P5 — API, persistence, and job orchestration | Not started | No API or database |
-| P6 — Deployment-profile benchmark and default selection | Not started | No benchmark cases or results |
+| P6 — Deployment-profile benchmark and default selection | Complete | Benchmark cases, scripts, manual rubric, telemetry, and final results documented. Default model selected. |
 | P7 — Offline and GitHub readiness | Not started | No offline workflow or CI |
 
 ## Next safe task
 
-Continue to P5: API, persistence, and job orchestration.
+Continue to P7: Offline and GitHub readiness (or P5 if it is still incomplete).
 
 ## Open decisions
 
 - Exact Foundry model and execution provider
 - Runtime acceleration behavior on Intel Arc
-- Final default deployment profile
+- Final default deployment profile: Foundation-Sec-8B-Reasoning Q4_K_M (Ollama)
 - Docker bridge reliability
 - Final source redistribution classifications
 - Report retention duration

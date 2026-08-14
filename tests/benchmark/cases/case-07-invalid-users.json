@@ -1,0 +1,36 @@
+{
+  "case_id": "case-07-invalid-users",
+  "description": "Attempts using random invalid users and root",
+  "analysis": {
+    "total_lines": 25,
+    "unparsed_lines": 2,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T10:01:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "203.0.113.10",
+        "failed_attempts": 20,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T10:01:00+00:00",
+        "users_attempted": [
+          "invalid1",
+          "invalid2",
+          "root"
+        ]
+      }
+    ],
+    "limitations": []
+  },
+  "chunks": [
+    {
+      "chunk_id": "cisa-ssh-guidance",
+      "document_id": "doc-cisa-ssh",
+      "source_title": "CISA SSH Best Practices",
+      "section_or_page": "Page 5",
+      "content": "SSH brute forcing from automated scripts is common. Organizations should monitor for rapid successive authentication failures (e.g., >10 per minute) targeting root or administrative accounts.",
+      "word_count": 26
+    }
+  ],
+  "expected_risk_level": "medium"
+}

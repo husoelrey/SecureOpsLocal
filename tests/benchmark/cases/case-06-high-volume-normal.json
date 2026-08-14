@@ -1,0 +1,34 @@
+{
+  "case_id": "case-06-high-volume-normal",
+  "description": "High volume of successful logins from automated script (internal)",
+  "analysis": {
+    "total_lines": 1000,
+    "unparsed_lines": 0,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T11:00:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "10.0.0.100",
+        "failed_attempts": 0,
+        "successful_attempts": 500,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T11:00:00+00:00",
+        "users_attempted": [
+          "service_account"
+        ]
+      }
+    ],
+    "limitations": []
+  },
+  "chunks": [
+    {
+      "chunk_id": "cisa-ssh-guidance",
+      "document_id": "doc-cisa-ssh",
+      "source_title": "CISA SSH Best Practices",
+      "section_or_page": "Page 5",
+      "content": "SSH brute forcing from automated scripts is common. Organizations should monitor for rapid successive authentication failures (e.g., >10 per minute) targeting root or administrative accounts.",
+      "word_count": 26
+    }
+  ],
+  "expected_risk_level": "low"
+}

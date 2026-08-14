@@ -1,0 +1,61 @@
+{
+  "case_id": "case-10-mixed-activity",
+  "description": "Mixed normal activity and brute force from different IPs",
+  "analysis": {
+    "total_lines": 200,
+    "unparsed_lines": 0,
+    "start_time": "2026-08-12T10:00:00+00:00",
+    "end_time": "2026-08-12T12:00:00+00:00",
+    "ip_aggregations": [
+      {
+        "ip": "10.0.0.5",
+        "failed_attempts": 1,
+        "successful_attempts": 5,
+        "first_seen": "2026-08-12T10:00:00+00:00",
+        "last_seen": "2026-08-12T12:00:00+00:00",
+        "users_attempted": [
+          "jsmith"
+        ]
+      },
+      {
+        "ip": "192.0.2.1",
+        "failed_attempts": 150,
+        "successful_attempts": 0,
+        "first_seen": "2026-08-12T11:00:00+00:00",
+        "last_seen": "2026-08-12T11:30:00+00:00",
+        "users_attempted": [
+          "root",
+          "admin"
+        ]
+      }
+    ],
+    "limitations": []
+  },
+  "chunks": [
+    {
+      "chunk_id": "nist-800-61-r3-sec3",
+      "document_id": "doc-nist-800-61",
+      "source_title": "NIST SP 800-61 Rev. 3",
+      "section_or_page": "Section 3.1: Incident Indicators",
+      "content": "Multiple failed login attempts from an unknown IP address followed by a successful login may indicate a brute force attack resulting in compromised credentials.",
+      "word_count": 25
+    },
+    {
+      "chunk_id": "cisa-ssh-guidance",
+      "document_id": "doc-cisa-ssh",
+      "source_title": "CISA SSH Best Practices",
+      "section_or_page": "Page 5",
+      "content": "SSH brute forcing from automated scripts is common. Organizations should monitor for rapid successive authentication failures (e.g., >10 per minute) targeting root or administrative accounts.",
+      "word_count": 26
+    },
+    {
+      "chunk_id": "mitre-t1110",
+      "document_id": "doc-mitre",
+      "source_title": "MITRE ATT&CK T1110",
+      "section_or_page": "Brute Force",
+      "content": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained.",
+      "word_count": 21
+    }
+  ],
+  "expected_risk_level": "medium"
+}
