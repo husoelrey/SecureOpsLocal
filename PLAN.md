@@ -102,14 +102,14 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 
 ## P7 — Offline and GitHub readiness
 
-- [ ] Verify the complete cached workflow with network access disabled.
-- [ ] Add deterministic CI checks using fake providers instead of model downloads.
-- [ ] Add a README, architecture diagram, quickstart, and troubleshooting guide.
-- [ ] Add safe model bootstrap and license instructions without redistributing weights.
-- [ ] Add synthetic demo data and a reproducible example report.
-- [ ] Publish security, privacy, offline, and product-scope limitations.
-- [ ] Run the complete MVP acceptance checklist.
-- [ ] Confirm that `main` is in a working, reviewable state.
+- [x] Verify the complete cached workflow with network access disabled.
+- [x] Add deterministic CI checks using fake providers instead of model downloads.
+- [x] Add a README, architecture diagram, quickstart, and troubleshooting guide.
+- [x] Add safe model bootstrap and license instructions without redistributing weights.
+- [x] Add synthetic demo data and a reproducible example report.
+- [x] Publish security, privacy, offline, and product-scope limitations.
+- [x] Run the complete MVP acceptance checklist.
+- [x] Confirm that `main` is in a working, reviewable state.
 
 ## Explicitly out of scope
 
