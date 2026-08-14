@@ -1,6 +1,6 @@
 import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ParsedLogLineBase(BaseModel):
@@ -18,7 +18,6 @@ class ParsedLogLineCreate(ParsedLogLineBase):
 
 
 class ParsedLogLine(ParsedLogLineBase):
-    id: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: int

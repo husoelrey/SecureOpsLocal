@@ -1,10 +1,22 @@
 """SecureOps Local — Main CLI Entry Point."""
 
+import sys
 from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
+
+# Configure UTF-8 for standard output streams if running on Windows
+if sys.platform == "win32":
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+from src.cli.knowledge import knowledge_app
 
 __version__ = "0.1.0"
 
@@ -16,6 +28,9 @@ app = typer.Typer(
 )
 
 console = Console()
+
+# Register subcommands
+app.add_typer(knowledge_app, name="knowledge")
 
 
 def version_callback(value: bool) -> None:

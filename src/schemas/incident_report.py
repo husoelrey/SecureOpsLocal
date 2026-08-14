@@ -1,10 +1,12 @@
 import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IncidentReportBase(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     status: str = Field(..., description="Status of the report generation, e.g., 'completed' or 'invalid_model_output'")
     summary: str = Field(..., description="High level summary of the incident")
     observed_findings: Dict[str, Any] = Field(..., description="Deterministic facts from the parser")
@@ -24,9 +26,8 @@ class IncidentReportCreate(IncidentReportBase):
 
 
 class IncidentReport(IncidentReportBase):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
+
     id: int
     created_at: datetime.datetime
     incident_id: str
-
-    class Config:
-        from_attributes = True
