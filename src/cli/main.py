@@ -16,6 +16,7 @@ if sys.platform == "win32":
         except Exception:
             pass
 
+from src.cli.analyze import analyze_log_file
 from src.cli.knowledge import knowledge_app
 
 __version__ = "0.1.0"
@@ -29,8 +30,9 @@ app = typer.Typer(
 
 console = Console()
 
-# Register subcommands
+# Register subcommands and commands
 app.add_typer(knowledge_app, name="knowledge")
+app.command("analyze")(analyze_log_file)
 
 
 def version_callback(value: bool) -> None:

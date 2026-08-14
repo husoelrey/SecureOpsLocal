@@ -1,9 +1,12 @@
+import json
 import tempfile
+from unittest.mock import AsyncMock, patch
 import uuid
 from pathlib import Path
 from typer.testing import CliRunner
 
 from src.cli.main import app
+from src.schemas.incident_report import IncidentReportCreate
 
 runner = CliRunner()
 
@@ -72,3 +75,76 @@ def test_cli_knowledge_add_invalid_extension():
         result = runner.invoke(app, ["knowledge", "add", str(bad_file)])
         assert result.exit_code == 1
         assert "Validation error" in result.stdout or "Unsupported file extension" in result.stdout
+
+
+def test_cli_analyze_invalid_file():
+    # Nonexistent file
+    res = runner.invoke(app, ["analyze", "nonexistent.log"])
+    assert res.exit_code != 0
+
+
+def test_cli_analyze_invalid_extension():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        bad_file = Path(tmp_dir) / "test.exe"
+        bad_file.write_bytes(b"data")
+        res = runner.invoke(app, ["analyze", str(bad_file)])
+        assert res.exit_code == 1
+        assert "Unsupported log file extension" in res.stdout
+
+
+def test_cli_analyze_empty_file():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        empty_file = Path(tmp_dir) / "empty.log"
+        empty_file.write_text("", encoding="utf-8")
+        res = runner.invoke(app, ["analyze", str(empty_file)])
+        assert res.exit_code == 1
+        assert "Log file is empty" in res.stdout
+
+
+def test_cli_analyze_success_with_mock():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        log_path = Path(tmp_dir) / "auth.log"
+        log_path.write_text(
+            "Aug 14 10:20:01 server sshd[101]: Failed password for invalid user admin from 192.168.1.50 port 22 ssh2\n"
+            "Aug 14 10:20:05 server sshd[102]: Failed password for invalid user admin from 192.168.1.50 port 22 ssh2\n"
+            "Aug 14 10:21:00 server sshd[103]: Accepted password for root from 10.0.0.1 port 22 ssh2\n",
+            encoding="utf-8"
+        )
+        json_out = Path(tmp_dir) / "out_report.json"
+
+        mock_report = IncidentReportCreate(
+            status="completed",
+            summary="Observed multiple failed login attempts against admin followed by root access.",
+            observed_findings={"total_lines": 3},
+            possible_interpretations=["Potential brute force password guessing on administrative account."],
+            risk_level="high",
+            risk_reasoning="Multiple authentication failures from an external IP followed by privileged session.",
+            recommended_actions=["Investigate source IP 192.168.1.50", "Verify authorized root login from 10.0.0.1"],
+            citations=[],
+            limitations=["Syslog missing year."],
+            parser_statistics={"total_lines": 3, "unparsed_lines": 0},
+            model_information={"provider": "OllamaProvider", "model": "foundation-sec-8b-reasoning:q4_k_m"},
+            performance_metrics={"prompt_tokens": 120, "completion_tokens": 85}
+        )
+
+        with patch("src.cli.analyze.IncidentAnalyzer.analyze_incident", new_callable=AsyncMock) as mock_analyze:
+            mock_analyze.return_value = mock_report
+
+            result = runner.invoke(app, ["analyze", str(log_path), "--output-json", str(json_out)])
+
+            assert result.exit_code == 0
+            # Check deterministic facts
+            assert "192.168.1.50" in result.stdout
+            assert "10.0.0.1" in result.stdout
+            assert "Deterministic Facts" in result.stdout
+            # Check assessment
+            assert "HIGH RISK" in result.stdout
+            assert "Observed multiple failed login attempts" in result.stdout
+            assert "Investigate source IP" in result.stdout
+            assert "Structured incident report exported to:" in result.stdout
+
+            # Verify exported JSON
+            assert json_out.exists()
+            data = json.loads(json_out.read_text(encoding="utf-8"))
+            assert data["risk_level"] == "high"
+            assert data["status"] == "completed"

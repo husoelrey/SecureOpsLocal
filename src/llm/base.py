@@ -7,6 +7,8 @@ from src.schemas.llm import NormalizedGenerationResult
 class LocalLLMProvider(ABC):
     """Abstract contract for local LLM providers."""
 
+    model_name: str
+
     @abstractmethod
     async def generate(
         self,
