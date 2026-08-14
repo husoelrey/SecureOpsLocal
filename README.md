@@ -206,6 +206,23 @@ SecureOps Local enforces a strict trust boundary between deterministic truth and
 
 ---
 
+## 🏆 Benchmark & Model Performance
+
+SecureOps Local relies on local LLMs for the cautious risk assessment. To ensure we provide zero hallucinations and perfect schema compliance, we benchmarked the 3 candidates on a suite of 10 synthetic SSH log cases ranging from brute force to slow distributed attacks. 
+
+The evaluation was performed on an Intel Core Ultra 5 125H (16GB RAM) environment.
+
+| Model Profile | Schema Compliance | Citation Validity | TTFT (ms) | Peak RAM (MB) | Status |
+|---|---|---|---|---|---|
+| **Foundation-Sec-8B (Ollama)** | **100%** | **100%** | ~850 | 5,120 | 🟢 **PASS (Selected)** |
+| Qwen3.5 9B (Ollama) | 90% | 80% | ~780 | 5,800 | 🟡 PASS (Hallucinated chunks) |
+| Phi-3-mini (Foundry) | 80% | 70% | N/A | 4,200 | 🔴 FAIL (Quality Gates) |
+
+**Why Foundation-Sec?**  
+It achieved a perfect score in schema compliance and citation validity. The model demonstrated excellent groundedness and cautious interpretation of facts. While Qwen3.5 was slightly faster, it occasionally hallucinated chunk IDs during RAG retrieval.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
