@@ -111,12 +111,18 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Run the complete MVP acceptance checklist.
 - [x] Confirm that `main` is in a working, reviewable state.
 
+## v1.0 — Enterprise Features
+
+- [x] Implement multi-source deterministic parsers (Windows Event Logs, Nginx, AWS CloudTrail).
+- [x] Implement Daemon Mode (continuous log tailing and watchdog alerting).
+- [x] Upgrade to Semantic RAG using local vector embeddings (`sentence-transformers` + `FAISS`/`ChromaDB`).
+- [x] Implement SIEM integration (RFC 5424 Syslog forwarding).
+- [x] Add webhook support for ticketing systems (Jira/ServiceNow).
+
 ## Explicitly out of scope
 
 - Model training or fine-tuning
 - Cloud LLM fallback
 - Automated blocking, account changes, command execution, or remediation
 - A separate frontend beyond Swagger UI
-- Vector databases and embedding retrieval for the MVP
-- Nmap or Nginx parsers
 - PDF report generation

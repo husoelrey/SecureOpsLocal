@@ -40,9 +40,9 @@
 
 ## 🌟 Overview
 
-SecureOps Local is a **local-first, air-gapped-ready** tool that turns raw SSH authentication logs into structured, cited incident-review reports — without sending a single byte to a cloud service.
+SecureOps Local is a **local-first, air-gapped-ready** tool that turns raw security logs (SSH, Windows Event Logs, Nginx, AWS CloudTrail) into structured, cited incident-review reports — without sending a single byte to a cloud service.
 
-Built specifically for **SOC analysts and system administrators**, SecureOps Local follows the Unix philosophy and provides a native Python CLI with rich terminal formatting (tables, status indicators, and color-coded risk levels).
+Built specifically for **SOC analysts and system administrators**, SecureOps Local follows the Unix philosophy and provides a native Python CLI with rich terminal formatting, background daemon monitoring, and automated SIEM forwarding.
 
 ### Who is this for?
 
@@ -145,20 +145,24 @@ Pasting raw security logs into public cloud AI services violates privacy, leaks 
 
 ```mermaid
 graph TD
-    subgraph "Terminal / CLI"
+    subgraph "Terminal / CLI / Watcher"
         CLI[secureops CLI\nTyper + Rich]
+        W[Daemon Watcher\nReal-time Log Tailing]
     end
 
     subgraph "Local Execution Host"
-        P[SSHAuthLogParser\nDeterministic Analysis]
-        R[TF-IDF Retriever\nKnowledge Base Search]
+        P[Deterministic Parsers\nSSH, Windows, Nginx, AWS]
+        R[Semantic Retriever\nsentence-transformers + FAISS]
         IA[IncidentAnalyzer\nLLM Orchestration]
         DB[(SQLite\nKnowledge & Reports)]
+        SIEM[SIEM Forwarder\nSyslog & Webhook]
         
         CLI --> P
+        W --> P
         CLI --> R
         CLI --> IA
         CLI --> DB
+        IA --> SIEM
     end
 
     subgraph "Local LLM Runtimes"
@@ -180,14 +184,14 @@ SecureOps Local enforces a strict trust boundary between deterministic truth and
 
 ## 🧩 Core Components
 
-### 1. SSH Authentication Log Parser
-- **Formats:** Syslog (`Aug 10 14:12:05`) and ISO 8601 / journald.
-- **Events:** `successful_login`, `failed_login`, `invalid_user`, `connection_closed`, etc.
+### 1. Deterministic Multi-Source Parsers
+- **Formats:** Syslog (SSH), Windows Event Logs (`.evtx`), Nginx Access Logs, AWS CloudTrail.
+- **Events:** Logins, failed auth, SQLi/XSS payloads, IAM anomalies.
 - **Aggregation:** Detects repeated failures, password guessing, and account targeting.
 
-### 2. Local Knowledge Base & RAG
+### 2. Semantic Knowledge Base & RAG
 - **Ingestion:** Supports PDF, Markdown, and TXT with heading-aware chunking.
-- **Retrieval:** Pure-Python TF-IDF + cosine similarity (deterministic, no external vector DB).
+- **Retrieval:** Local semantic vector embeddings (`all-MiniLM-L6-v2`) via `sentence-transformers` and `FAISS` (deterministic, 100% offline).
 - **Citation Guarantee:** Every model citation is programmatically validated against retrieved chunks.
 
 ### 3. Provider-Independent LLM Pipeline
@@ -291,6 +295,10 @@ uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
 | **P6** | Deployment-profile benchmark & selection | ✅ Complete |
 | **P7** | Offline and GitHub readiness | ✅ Complete |
 | **CLI**| Native Typer & Rich Command Line Interface | ✅ Complete |
+| **v1.0** | Multi-Source Parsers (Windows, Nginx, AWS) | ✅ Complete |
+| **v1.0** | Daemon Watcher Mode & Alerting | ✅ Complete |
+| **v1.0** | Semantic RAG (Vector Embeddings) | ✅ Complete |
+| **v1.0** | SIEM Integrations (Syslog & Webhook) | ✅ Complete |
 
 ---
 
