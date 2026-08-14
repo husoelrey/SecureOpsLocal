@@ -5,6 +5,29 @@ from typing import Any, Dict, Iterable, Set
 from src.schemas.analysis import IPAggregation, LogAnalysis
 from src.schemas.parsed_log_line import ParsedLogLineCreate
 
+SUCCESS_EVENTS = {
+    "successful_login",
+    "successful_request",
+    "successful_console_login",
+    "windows_event_4624",
+}
+
+FAILURE_EVENTS = {
+    "failed_login",
+    "failed_login_invalid_user",
+    "invalid_user",
+    "failed_request",
+    "failed_console_login",
+    "sqli_attempt",
+    "xss_attempt",
+    "path_traversal",
+    "web_attack",
+    "unauthorized_access",
+    "forbidden_access",
+    "failed_event",
+    "windows_event_4625",
+}
+
 
 def aggregate_logs(lines: Iterable[ParsedLogLineCreate]) -> LogAnalysis:
     total_lines = 0
@@ -43,12 +66,16 @@ def aggregate_logs(lines: Iterable[ParsedLogLineCreate]) -> LogAnalysis:
             if stats["last_seen"] is None or line.timestamp > stats["last_seen"]:
                 stats["last_seen"] = line.timestamp
 
-            if line.event_type == "successful_login":
+            if line.event_type in SUCCESS_EVENTS or line.event_type.startswith(
+                "successful"
+            ):
                 stats["successful_attempts"] += 1
-            elif line.event_type in (
-                "failed_login",
-                "failed_login_invalid_user",
-                "invalid_user",
+            elif (
+                line.event_type in FAILURE_EVENTS
+                or line.event_type.startswith("failed_")
+                or "attempt" in line.event_type
+                or "attack" in line.event_type
+                or "traversal" in line.event_type
             ):
                 stats["failed_attempts"] += 1
 
@@ -70,7 +97,7 @@ def aggregate_logs(lines: Iterable[ParsedLogLineCreate]) -> LogAnalysis:
         )
 
     limitations = [
-        "Syslog entries lack years, so current year was assumed if ISO-8601 wasn't used.",  # noqa: E501
+        "Syslog entries lack years, so current year was assumed if ISO-8601 wasn't used.",
     ]
     if unparsed_lines > 0:
         limitations.append(f"{unparsed_lines} line(s) could not be parsed.")

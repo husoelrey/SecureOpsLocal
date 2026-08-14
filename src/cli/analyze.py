@@ -2,38 +2,62 @@
 
 import asyncio
 import datetime
-import json
+import uuid
 from pathlib import Path
 from typing import Optional
-import uuid
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 from src.llm.analyzer import IncidentAnalyzer
+from src.llm.base import LocalLLMProvider
 from src.llm.foundry import FoundryLocalProvider
 from src.llm.ollama import OllamaProvider
 from src.parser.aggregator import aggregate_logs
+from src.parser.aws import AWSCloudTrailParser
+from src.parser.base import LogParser
+from src.parser.nginx import NginxAccessParser
 from src.parser.ssh import SSHAuthLogParser
+from src.parser.windows import WindowsEventLogParser
 from src.rag.packing import pack_context
 from src.rag.query import build_retrieval_query
 from src.rag.retriever import TFIDFRetriever
 from src.rag.service import load_all_rag_chunks
+from src.schemas.analysis import LogAnalysis
 from src.schemas.incident_report import IncidentReportCreate
+from src.schemas.rag import DocumentChunk
 
 console = Console()
 
 MAX_LOG_SIZE_BYTES = 5 * 1024 * 1024  # 5 MiB
-ALLOWED_LOG_EXTENSIONS = {".log", ".txt"}
+ALLOWED_LOG_EXTENSIONS = {".log", ".txt", ".json", ".evtx"}
+
+
+def get_parser_for_log_type(log_type: str) -> LogParser:
+    """Resolve the appropriate LogParser implementation for the specified log type."""
+    normalized = (log_type or "").strip().lower()
+    if normalized in ("ssh", "sshd", "auth"):
+        return SSHAuthLogParser()
+    elif normalized in ("windows", "win", "evtx", "eventlog"):
+        return WindowsEventLogParser()
+    elif normalized in ("nginx", "web", "apache", "waf"):
+        return NginxAccessParser()
+    elif normalized in ("aws", "cloudtrail", "aws_cloudtrail"):
+        return AWSCloudTrailParser()
+    else:
+        raise ValueError(
+            f"Unsupported log type '{log_type}'. Supported: ssh, windows, nginx, aws."
+        )
 
 
 def validate_log_file(logfile: Path) -> None:
     """Validate log file existence, extension, and size."""
     if not logfile.exists() or not logfile.is_file():
-        console.print(f"[bold red][X] Error: File '{logfile}' does not exist or is not a regular file.[/bold red]")
+        console.print(
+            f"[bold red][X] Error: File '{logfile}' does not exist or is not a regular file.[/bold red]"
+        )
         raise typer.Exit(code=1)
 
     ext = logfile.suffix.lower()
@@ -55,7 +79,7 @@ def validate_log_file(logfile: Path) -> None:
         raise typer.Exit(code=1)
 
 
-def display_deterministic_facts(analysis, logfile: Path) -> None:
+def display_deterministic_facts(analysis: LogAnalysis, logfile: Path, log_type: str = "ssh") -> None:
     """Render deterministic parser findings into a clean Rich table."""
     time_str = "N/A"
     if analysis.start_time and analysis.end_time:
@@ -66,9 +90,10 @@ def display_deterministic_facts(analysis, logfile: Path) -> None:
 
     summary_text = (
         f"[bold]Target File:[/bold] {logfile.name}  |  "
-        f"[bold]Total Lines:[/bold] {analysis.total_lines}  |  "
-        f"[bold]Unparsed Lines:[/bold] {analysis.unparsed_lines}  |  "
-        f"[bold]Unique IPs:[/bold] {len(analysis.ip_aggregations)}\n"
+        f"[bold]Log Type:[/bold] {log_type.upper()}  |  "
+        f"[bold]Total Events/Lines:[/bold] {analysis.total_lines}  |  "
+        f"[bold]Unparsed:[/bold] {analysis.unparsed_lines}  |  "
+        f"[bold]Unique Source IPs:[/bold] {len(analysis.ip_aggregations)}\n"
         f"[bold]Time Span:[/bold] {time_str}"
     )
 
@@ -79,15 +104,19 @@ def display_deterministic_facts(analysis, logfile: Path) -> None:
         show_lines=True,
     )
     table.add_column("Source IP", style="bold yellow", no_wrap=True)
-    table.add_column("Failed Logins", justify="right", style="bold red")
-    table.add_column("Successful Logins", justify="right", style="bold green")
-    table.add_column("Targeted Accounts", style="white")
+    table.add_column("Failed / Attack Attempts", justify="right", style="bold red")
+    table.add_column("Successful Events", justify="right", style="bold green")
+    table.add_column("Targeted Accounts / Identifiers", style="white")
     table.add_column("First Activity (UTC)", style="dim")
     table.add_column("Last Activity (UTC)", style="dim")
 
     for agg in analysis.ip_aggregations:
-        first_str = agg.first_seen.strftime("%Y-%m-%d %H:%M:%S") if agg.first_seen else "N/A"
-        last_str = agg.last_seen.strftime("%Y-%m-%d %H:%M:%S") if agg.last_seen else "N/A"
+        first_str = (
+            agg.first_seen.strftime("%Y-%m-%d %H:%M:%S") if agg.first_seen else "N/A"
+        )
+        last_str = (
+            agg.last_seen.strftime("%Y-%m-%d %H:%M:%S") if agg.last_seen else "N/A"
+        )
         users_str = ", ".join(agg.users_attempted) if agg.users_attempted else "[none]"
 
         failed_style = "bold red" if agg.failed_attempts > 0 else "dim"
@@ -102,11 +131,13 @@ def display_deterministic_facts(analysis, logfile: Path) -> None:
             last_str,
         )
 
-    console.print(Panel(summary_text, title="[bold blue]Log Overview[/bold blue]", expand=False))
+    console.print(
+        Panel(summary_text, title="[bold blue]Log Overview[/bold blue]", expand=False)
+    )
     console.print(table)
 
 
-def display_assessment(report: IncidentReportCreate, packed_chunks: list) -> None:
+def display_assessment(report: IncidentReportCreate, packed_chunks: list[DocumentChunk]) -> None:
     """Render the cautious LLM risk assessment, recommendations, and citations."""
     risk_level = report.risk_level.upper()
     if risk_level == "HIGH":
@@ -118,7 +149,11 @@ def display_assessment(report: IncidentReportCreate, packed_chunks: list) -> Non
     else:
         risk_badge = f"[bold white on blue] {risk_level} [/bold white on blue]"
 
-    status_badge = "[green]COMPLETED[/green]" if report.status == "completed" else f"[yellow]{report.status.upper()}[/yellow]"
+    status_badge = (
+        "[green]COMPLETED[/green]"
+        if report.status == "completed"
+        else f"[yellow]{report.status.upper()}[/yellow]"
+    )
 
     # Build assessment content
     content_lines = [
@@ -127,16 +162,22 @@ def display_assessment(report: IncidentReportCreate, packed_chunks: list) -> Non
     ]
 
     if report.possible_interpretations:
-        content_lines.append("[bold cyan]Possible Evidence-Supported Interpretations:[/bold cyan]")
+        content_lines.append(
+            "[bold cyan]Possible Evidence-Supported Interpretations:[/bold cyan]"
+        )
         for interp in report.possible_interpretations:
             content_lines.append(f"  [bold blue]*[/bold blue] {interp}")
         content_lines.append("")
 
     if report.risk_reasoning:
-        content_lines.append(f"[bold cyan]Risk Reasoning:[/bold cyan]\n{report.risk_reasoning}\n")
+        content_lines.append(
+            f"[bold cyan]Risk Reasoning:[/bold cyan]\n{report.risk_reasoning}\n"
+        )
 
     if report.recommended_actions:
-        content_lines.append("[bold cyan]Recommended Defensive Actions (Non-Destructive):[/bold cyan]")
+        content_lines.append(
+            "[bold cyan]Recommended Defensive Actions (Non-Destructive):[/bold cyan]"
+        )
         for action in report.recommended_actions:
             content_lines.append(f"  [bold green]+[/bold green] {action}")
         content_lines.append("")
@@ -167,27 +208,39 @@ def display_assessment(report: IncidentReportCreate, packed_chunks: list) -> Non
             if chunk:
                 cit_table.add_row(cid, chunk.source_title, chunk.section_or_page)
             else:
-                cit_table.add_row(cid, "[dim]Referenced Document[/dim]", "[dim]N/A[/dim]")
+                cit_table.add_row(
+                    cid, "[dim]Referenced Document[/dim]", "[dim]N/A[/dim]"
+                )
 
         console.print(cit_table)
     else:
-        console.print("[dim]No external knowledge base citations were referenced in this assessment.[/dim]")
+        console.print(
+            "[dim]No external knowledge base citations were referenced in this assessment.[/dim]"
+        )
 
     # Limitations
     if report.limitations:
         lim_panel = "\n".join(f"  [dim]- {lim}[/dim]" for lim in report.limitations)
-        console.print(Panel(lim_panel, title="[dim]Analysis Limitations[/dim]", expand=False))
+        console.print(
+            Panel(lim_panel, title="[dim]Analysis Limitations[/dim]", expand=False)
+        )
 
 
 def analyze_log_file(
     logfile: Path = typer.Argument(
         ...,
-        help="Path to the SSH authentication log file (.log or .txt).",
+        help="Path to the security log file (.log, .txt, .json, .evtx).",
         exists=True,
         file_okay=True,
         dir_okay=False,
         readable=True,
         resolve_path=True,
+    ),
+    log_type: str = typer.Option(
+        "ssh",
+        "--log-type",
+        "-t",
+        help="Type of security log source ('ssh', 'windows', 'nginx', 'aws').",
     ),
     model: str = typer.Option(
         "foundation-sec-8b-reasoning:q4_k_m",
@@ -226,8 +279,14 @@ def analyze_log_file(
         help="Number of relevant knowledge base chunks to retrieve.",
     ),
 ) -> None:
-    """Analyze an SSH authentication log file, retrieve RAG guidance, and generate a cautious risk report."""
+    """Analyze a security log file (SSH, Windows, Nginx, AWS), retrieve RAG guidance, and generate a cautious risk report."""
     validate_log_file(logfile)
+
+    try:
+        parser = get_parser_for_log_type(log_type)
+    except ValueError as e:
+        console.print(f"[bold red][X] Error: {e}[/bold red]")
+        raise typer.Exit(code=1)
 
     current_year = year or datetime.datetime.now(datetime.timezone.utc).year
     incident_id = f"inc_{uuid.uuid4().hex[:8]}"
@@ -236,48 +295,53 @@ def analyze_log_file(
         Panel(
             f"[bold cyan]SecureOps Local Incident Review[/bold cyan]\n"
             f"[bold]Incident ID:[/bold] {incident_id}  |  [bold]Target:[/bold] {logfile.name}\n"
-            f"[bold]Model Profile:[/bold] {model} ({provider_name})",
+            f"[bold]Log Type:[/bold] {log_type.upper()}  |  [bold]Model Profile:[/bold] {model} ({provider_name})",
             title="[bold blue]SecureOps Local[/bold blue]",
             expand=False,
         )
     )
 
     # 1. Deterministic Parsing
-    with console.status("[bold green]Parsing SSH authentication logs deterministically...[/bold green]", spinner="dots"):
+    with console.status(
+        f"[bold green]Parsing {log_type.upper()} logs deterministically...[/bold green]",
+        spinner="dots",
+    ):
         try:
-            content = logfile.read_text(encoding="utf-8", errors="replace")
-            lines = content.splitlines()
+            parsed_lines = list(
+                parser.parse_file(str(logfile), current_year=current_year)
+            )
         except Exception as e:
-            console.print(f"[bold red][X] Failed to read log file: {e}[/bold red]")
+            console.print(f"[bold red][X] Failed to parse log file: {e}[/bold red]")
             raise typer.Exit(code=1)
-
-        parser = SSHAuthLogParser()
-        parsed_lines = []
-        for line in lines:
-            if line.strip():
-                parsed = parser.parse_line(line, current_year=current_year)
-                parsed_lines.append(parsed)
 
         analysis = aggregate_logs(parsed_lines)
 
     if analysis.total_lines == 0:
-        console.print("[bold yellow][!] No log lines were parsed from the input file.[/bold yellow]")
+        console.print(
+            "[bold yellow][!] No log lines were parsed from the input file.[/bold yellow]"
+        )
         raise typer.Exit(code=0)
 
     # Display Deterministic Facts immediately
-    display_deterministic_facts(analysis, logfile)
+    display_deterministic_facts(analysis, logfile, log_type=log_type)
 
     # 2. RAG Retrieval
     packed_chunks = []
-    with console.status("[bold green]Retrieving security guidance from local knowledge base...[/bold green]", spinner="dots"):
+    with console.status(
+        "[bold green]Retrieving security guidance from local knowledge base...[/bold green]",
+        spinner="dots",
+    ):
         all_chunks = load_all_rag_chunks()
         if all_chunks:
             retrieval_query = build_retrieval_query(analysis)
             retriever = TFIDFRetriever(all_chunks)
             retrieved = retriever.retrieve(retrieval_query, top_k=top_k)
-            packed_chunks = pack_context(retrieved, max_words=1500, max_chunks_per_source=2)
+            packed_chunks = pack_context(
+                retrieved, max_words=1500, max_chunks_per_source=2
+            )
 
     # 3. LLM Generation
+    provider: LocalLLMProvider
     if provider_name.lower() == "foundry":
         effective_url = base_url or "http://localhost:39251"
         provider = FoundryLocalProvider(base_url=effective_url, model_name=model)
@@ -320,6 +384,8 @@ def analyze_log_file(
         try:
             output_json.parent.mkdir(parents=True, exist_ok=True)
             output_json.write_text(report.model_dump_json(indent=2), encoding="utf-8")
-            console.print(f"[bold green]✓ Structured incident report exported to:[/bold green] [cyan]{output_json}[/cyan]")
+            console.print(
+                f"[bold green]✓ Structured incident report exported to:[/bold green] [cyan]{output_json}[/cyan]"
+            )
         except Exception as e:
             console.print(f"[bold red][X] Failed to export JSON report: {e}[/bold red]")
