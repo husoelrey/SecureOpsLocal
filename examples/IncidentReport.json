@@ -1,0 +1,29 @@
+{
+  "correlation_id": "req-9876543210",
+  "status": "complete",
+  "observed_facts": {
+    "total_lines_parsed": 8,
+    "unparsed_lines": 0,
+    "failed_attempts": 6,
+    "successful_logins": 1,
+    "invalid_users": ["guest"],
+    "unique_source_ips": ["192.168.1.100", "10.0.0.50", "192.168.1.105"]
+  },
+  "model_assessment": {
+    "profile_id": "ollama-foundation-sec-8b-reasoning-q4_k_m",
+    "risk_level": "medium",
+    "summary": "Observation of 5 repeated failed login attempts for the 'root' user from IP 192.168.1.100 over a short time window. Additional failed attempts for an invalid user 'guest' from IP 192.168.1.105. A successful public key login for 'admin' was recorded from 10.0.0.50. This pattern may indicate a brute-force or credential stuffing attempt targeted at the root and generic accounts.",
+    "recommendations": [
+      "Verify if IP 192.168.1.100 is an authorized internal vulnerability scanner.",
+      "Ensure root login via password is disabled in sshd_config (PermitRootLogin prohibit-password or no).",
+      "Correlate the successful admin login from 10.0.0.50 with expected administrative activity."
+    ],
+    "citations": [
+      {
+        "source": "NIST SP 800-61 Rev. 3",
+        "section": "3.1.1",
+        "snippet": "Multiple failed login attempts for administrative accounts should be investigated to determine if they are part of a coordinated brute-force attack."
+      }
+    ]
+  }
+}

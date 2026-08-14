@@ -76,13 +76,13 @@ This document records verified reality. Never describe planned work as complete.
 | P2 — Deterministic SSH analysis core | Complete | Parser implementation, test suite, and validation passed |
 | P3 — Local knowledge base and RAG | Complete | Ingestion, chunking, retrieval, packing, and tests implemented and passing |
 | P4 — Provider-independent incident analysis | Complete | Provider adapters, strict assembly, privacy guarantees, and E2E integration test complete |
-| P5 — API, persistence, and job orchestration | Not started | No API or database |
-| P6 — Deployment-profile benchmark and default selection | Complete | Benchmark cases, scripts, manual rubric, telemetry, and final results documented. Default model selected. |
-| P7 — Offline and GitHub readiness | Not started | No offline workflow or CI |
+| P5 — API, persistence, and job orchestration | Complete | Endpoints and job runner implemented |
+| P6 — Deployment-profile benchmark and default selection | Complete | Benchmarks completed and default selected |
+| P7 — Offline and GitHub readiness | Complete | Offline workflow, CI, and demo data added |
 
 ## Next safe task
 
-Continue to P7: Offline and GitHub readiness (or P5 if it is still incomplete).
+MVP is fully complete.
 
 ## Open decisions
 
