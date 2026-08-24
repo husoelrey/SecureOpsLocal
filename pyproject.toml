@@ -19,7 +19,16 @@ dependencies = [
     "sentence-transformers>=3.0.0",
     "faiss-cpu>=1.8.0",
     "numpy>=1.26.0",
+    "maturin>=1.5.0",
 ]
+
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+manifest-path = "rust/Cargo.toml"
+module-name = "secureops_core"
 
 [project.scripts]
 secureops = "src.cli.main:app"

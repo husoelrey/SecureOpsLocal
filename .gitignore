@@ -34,12 +34,15 @@ junit.xml
 build/
 dist/
 site/
+target/
+rust/target/
 *.egg
 *.egg-info/
 .eggs/
 pip-wheel-metadata/
 wheelhouse/
 pip-downloads/
+*.pyd
 
 # IDE and editor state
 .idea/
