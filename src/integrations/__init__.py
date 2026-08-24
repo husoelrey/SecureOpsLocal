@@ -1,3 +1,10 @@
+from src.integrations.intel_feed import (
+    ingest_threat_intel_file,
+    init_threat_intel_db,
+    lookup_ip_intel,
+    lookup_ips_intel,
+    parse_threat_feed_file,
+)
 from src.integrations.siem_forwarder import (
     compute_syslog_pri,
     format_rfc5424_syslog,
@@ -13,4 +20,9 @@ __all__ = [
     "send_syslog",
     "build_webhook_payload",
     "send_webhook",
+    "ingest_threat_intel_file",
+    "init_threat_intel_db",
+    "lookup_ip_intel",
+    "lookup_ips_intel",
+    "parse_threat_feed_file",
 ]
