@@ -351,6 +351,26 @@ def analyze_log_file(
                 retrieved, max_words=1500, max_chunks_per_source=2
             )
 
+    # Check for historical administrator review feedback
+    from src.feedback.service import (
+        build_feedback_context_note,
+        get_feedback_for_ips_or_users,
+    )
+
+    ips = [agg.ip for agg in analysis.ip_aggregations]
+    users = [u for agg in analysis.ip_aggregations for u in agg.users_attempted]
+    feedback_items = get_feedback_for_ips_or_users(ips=ips, users=users)
+    feedback_notes = build_feedback_context_note(feedback_items)
+    if feedback_notes:
+        console.print(
+            Panel(
+                f"[bold cyan]Administrator Historical Context Applied:[/bold cyan]\n"
+                f"[dim]{feedback_notes}[/dim]",
+                title="[bold blue]Autonomous Feedback Loop[/bold blue]",
+                expand=False,
+            )
+        )
+
     # 3. LLM Generation
     provider: LocalLLMProvider
     if provider_name.lower() == "foundry":
@@ -372,6 +392,7 @@ def analyze_log_file(
                     incident_id=incident_id,
                     analysis=analysis,
                     chunks=packed_chunks,
+                    feedback_notes=feedback_notes,
                 )
             )
     except Exception as e:
