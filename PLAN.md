@@ -119,6 +119,13 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Implement SIEM integration (RFC 5424 Syslog forwarding).
 - [x] Add webhook support for ticketing systems (Jira/ServiceNow).
 
+## v1.1 — High-Performance Rust Engine
+
+- [x] Implement `secureops_core` PyO3/maturin Rust extension crate.
+- [x] Rewrite `SSHAuthLogParser` and `NginxAccessParser` regex and string matching in Rust.
+- [x] Integrate Rust core engine with Python `LogParser` wrappers while preserving exact Pydantic schema and deterministic guarantees.
+- [x] Add Rust parser unit and integration test suite.
+
 ## Explicitly out of scope
 
 - Model training or fine-tuning

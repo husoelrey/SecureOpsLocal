@@ -153,6 +153,15 @@ Statuses: Proposed, Accepted, Superseded, Rejected.
 - Verification: Representative ignored and trackable paths must pass
   `git check-ignore` during repository-governance validation.
 
+## D-025 — High-performance Rust parsing extension module
+
+- Status: Accepted
+- Date: 2026-08-24
+- Decision: Use PyO3 and maturin to compile a native Rust core extension (`secureops_core`) for regex matching and line-by-line parsing of SSH and Nginx access logs, while retaining pure Python wrappers and Pydantic schema validation.
+- Rationale: Parsing enterprise-scale log streams requires low latency and high CPU throughput without sacrificing deterministic schema compatibility.
+- Alternatives: Pure Python parsers (slower on large streams), C-types bindings (less memory safe).
+- Consequence or fallback: When compiled extension is unavailable, fallback to pure Python implementation.
+
 ## New decision template
 
 ## D-XXX — Title
