@@ -10,6 +10,7 @@ class IPAggregation(BaseModel):
     first_seen: datetime.datetime
     last_seen: datetime.datetime
     users_attempted: list[str]
+    intel_flags: list[str] = []
 
 
 class LogAnalysis(BaseModel):
