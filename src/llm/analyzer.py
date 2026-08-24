@@ -1,7 +1,7 @@
 # ruff: noqa: E501
 import logging
 import re
-from typing import List
+from typing import List, Optional
 
 from src.llm.base import LocalLLMProvider
 from src.llm.prompts import SYSTEM_PROMPT_V1
@@ -41,21 +41,50 @@ class IncidentAnalyzer:
             prompt += f"Content:\n{chunk.content}\n\n"
         return prompt
 
-    async def analyze_incident(self, incident_id: str, analysis: LogAnalysis, chunks: List[DocumentChunk]) -> IncidentReportCreate:
+    async def analyze_incident(
+        self,
+        incident_id: str,
+        analysis: LogAnalysis,
+        chunks: List[DocumentChunk],
+        feedback_notes: Optional[str] = None,
+    ) -> IncidentReportCreate:
+        from src.feedback.service import (
+            build_feedback_context_note,
+            get_feedback_for_ips_or_users,
+        )
+
         user_prompt = self._build_user_prompt(analysis, chunks)
         schema = ModelAssessment.model_json_schema()
         valid_chunk_ids = {chunk.chunk_id for chunk in chunks}
-        
+
+        # Query historical feedback for involved IPs and users if not explicitly provided
+        if feedback_notes is None:
+            ips = [agg.ip for agg in analysis.ip_aggregations]
+            users = [
+                u
+                for agg in analysis.ip_aggregations
+                for u in agg.users_attempted
+            ]
+            feedback_items = get_feedback_for_ips_or_users(ips=ips, users=users)
+            feedback_notes = build_feedback_context_note(feedback_items)
+
+        system_prompt = SYSTEM_PROMPT_V1
+        if feedback_notes:
+            system_prompt = (
+                f"{SYSTEM_PROMPT_V1}\n\n"
+                f"Administrator Historical Feedback:\n{feedback_notes}"
+            )
+
         attempt = 0
         last_error = ""
         current_prompt = user_prompt
-        
+
         while attempt <= self.max_retries:
             try:
                 result = await self.provider.generate(
                     prompt=current_prompt,
-                    system_prompt=SYSTEM_PROMPT_V1,
-                    schema=schema
+                    system_prompt=system_prompt,
+                    schema=schema,
                 )
                 
                 clean_content = self._strip_reasoning(result.content)
