@@ -119,6 +119,14 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Implement SIEM integration (RFC 5424 Syslog forwarding).
 - [x] Add webhook support for ticketing systems (Jira/ServiceNow).
 
+## v1.1 — Autonomous Feedback Loop
+
+- [x] Create SQLite `feedback` table and Alembic migration.
+- [x] Implement `src/feedback/service.py` to record, query, and format administrator review feedback.
+- [x] Implement CLI command `secureops feedback <incident_id> --false-positive --reason "<reason>"`.
+- [x] Update RAG/LLM pipeline to query historical administrator feedback by IP/user and dynamically inject context notes into system prompts.
+- [x] Add comprehensive test suite for administrator feedback recording, querying, prompt injection, and CLI commands.
+
 ## Explicitly out of scope
 
 - Model training or fine-tuning

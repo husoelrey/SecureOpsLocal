@@ -153,6 +153,15 @@ Statuses: Proposed, Accepted, Superseded, Rejected.
 - Verification: Representative ignored and trackable paths must pass
   `git check-ignore` during repository-governance validation.
 
+## D-028 — Autonomous feedback loop and historical review memory
+
+- Status: Accepted
+- Date: 2026-08-24
+- Decision: Record administrator review feedback (false positive annotations and reasoning) in a local `feedback` SQLite table, querying matching historical feedback by IP/user and dynamically injecting contextual review memory notes into the system prompt during incident assessment.
+- Rationale: Strictly adheres to the "RAG is not training" principle in AGENTS.md. The system improves accuracy and suppresses repetitive false positives without retraining or modifying model weights.
+- Alternatives: Fine-tuning local LLM weights on false positive examples (violates non-negotiable principle that local LLM weights remain unmodified and determinism rules).
+- Consequence or fallback: The LLM receives administrator historical context notes in its system prompt and factors previous false positive verdicts into its cautious risk assessments.
+
 ## New decision template
 
 ## D-XXX — Title
