@@ -25,7 +25,7 @@ STIX_IPV6_PATTERN = re.compile(r"ipv6-addr:value\s*=\s*'([^']+)'", re.IGNORECASE
 
 def init_threat_intel_db() -> None:
     """Ensure threat_intel table exists in the local database."""
-    Base.metadata.create_all(bind=engine, tables=[ThreatIntel.__table__])
+    Base.metadata.create_all(bind=engine)
 
 
 def parse_csv_feed(content: str, source_label: str = "CSV") -> List[ThreatIntelCreate]:
