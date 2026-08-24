@@ -119,6 +119,14 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Implement SIEM integration (RFC 5424 Syslog forwarding).
 - [x] Add webhook support for ticketing systems (Jira/ServiceNow).
 
+## v1.1 — High-Performance Engine & Cross-Log Correlation
+
+- [x] Implement `CrossLogAggregator` to deterministically correlate multi-source logs by Source IP and Timestamp.
+- [x] Update CLI `analyze` and `watch` commands to support multiple `--file` and `--log-type` arguments simultaneously.
+- [x] Update LLM prompt and user prompt synthesis for Multi-Source Timeline and multi-stage attack risk evaluation.
+- [x] Implement multi-target sliding window log watcher daemon.
+- [x] Add comprehensive test suite for multi-source correlation and multi-stage attack analysis.
+
 ## Explicitly out of scope
 
 - Model training or fine-tuning
