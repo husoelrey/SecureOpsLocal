@@ -38,11 +38,16 @@ class CrossLogAggregator:
     (SSH, Nginx, Windows, AWS), grouped by Source IP and sorted chronologically by Timestamp.
     """
 
-    def __init__(self, current_year: Optional[int] = None):
+    def __init__(
+        self,
+        current_year: Optional[int] = None,
+        enable_threat_intel: bool = True,
+    ):
         self.events: List[ParsedLogLineCreate] = []
         self.current_year = (
             current_year or datetime.datetime.now(datetime.timezone.utc).year
         )
+        self.enable_threat_intel = enable_threat_intel
 
     def add_events(self, events: Iterable[ParsedLogLineCreate]) -> None:
         """Add parsed log line events to the correlation pool."""
@@ -157,7 +162,7 @@ class CrossLogAggregator:
 
         # Query local SQLite threat intelligence database for extracted IPs
         intel_matches: Dict[str, Any] = {}
-        if ip_stats:
+        if self.enable_threat_intel and ip_stats:
             try:
                 intel_matches = lookup_ips_intel(list(ip_stats.keys()))
             except Exception:
@@ -217,8 +222,11 @@ class CrossLogAggregator:
         )
 
 
-def aggregate_logs(lines: Iterable[ParsedLogLineCreate]) -> LogAnalysis:
+def aggregate_logs(
+    lines: Iterable[ParsedLogLineCreate],
+    enable_threat_intel: bool = True,
+) -> LogAnalysis:
     """Convenience function to aggregate an iterable of parsed log lines."""
-    aggregator = CrossLogAggregator()
+    aggregator = CrossLogAggregator(enable_threat_intel=enable_threat_intel)
     aggregator.add_events(lines)
     return aggregator.aggregate()
