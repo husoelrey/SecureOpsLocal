@@ -1,7 +1,8 @@
 import datetime
 from collections import defaultdict
-from typing import Any, Dict, Iterable, Set
+from typing import Any, Dict, Iterable, List, Set
 
+from src.integrations.intel_feed import lookup_ips_intel
 from src.schemas.analysis import IPAggregation, LogAnalysis
 from src.schemas.parsed_log_line import ParsedLogLineCreate
 
@@ -29,7 +30,10 @@ FAILURE_EVENTS = {
 }
 
 
-def aggregate_logs(lines: Iterable[ParsedLogLineCreate]) -> LogAnalysis:
+def aggregate_logs(
+    lines: Iterable[ParsedLogLineCreate],
+    enable_threat_intel: bool = True,
+) -> LogAnalysis:
     total_lines = 0
     unparsed_lines = 0
     start_time: datetime.datetime | None = None
@@ -83,8 +87,21 @@ def aggregate_logs(lines: Iterable[ParsedLogLineCreate]) -> LogAnalysis:
                 users: Set[str] = stats["users"]
                 users.add(line.user)
 
+    # Query local SQLite threat intelligence database for extracted IPs
+    intel_matches: Dict[str, Any] = {}
+    if enable_threat_intel and ip_stats:
+        try:
+            intel_matches = lookup_ips_intel(list(ip_stats.keys()))
+        except Exception:
+            intel_matches = {}
+
     ip_aggregations = []
     for ip, stats in ip_stats.items():
+        flags: List[str] = []
+        if ip in intel_matches:
+            match = intel_matches[ip]
+            flags.append(match.threat_type.upper())
+
         ip_aggregations.append(
             IPAggregation(
                 ip=ip,
@@ -93,6 +110,7 @@ def aggregate_logs(lines: Iterable[ParsedLogLineCreate]) -> LogAnalysis:
                 first_seen=stats["first_seen"],
                 last_seen=stats["last_seen"],
                 users_attempted=sorted(list(stats["users"])),
+                intel_flags=flags,
             )
         )
 

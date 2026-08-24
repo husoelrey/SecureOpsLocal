@@ -171,6 +171,15 @@ Statuses: Proposed, Accepted, Superseded, Rejected.
 - Alternatives: Pure Python parsers (slower on large streams), C-types bindings (less memory safe).
 - Consequence or fallback: When compiled extension is unavailable, fallback to pure Python implementation.
 
+## D-027 — Offline threat intelligence IOC database
+
+- Status: Accepted
+- Date: 2026-08-24
+- Decision: Ingest and query threat intelligence indicators (STIX 2.1, MISP, CSV, JSON) strictly against a local SQLite database (`threat_intel` table) with zero external cloud or network requests.
+- Rationale: Strictly preserves the core product's air-gapped, privacy-preserving guarantees without leaking IP queries to cloud threat intelligence APIs (such as VirusTotal or AbuseIPDB).
+- Alternatives: Cloud Threat Intelligence APIs (violates air-gapped and raw data privacy guarantees).
+- Consequence or fallback: Organizations can import sanitized, verified threat feeds offline; missing indicators simply yield no match.
+
 ## New decision template
 
 ## D-XXX — Title

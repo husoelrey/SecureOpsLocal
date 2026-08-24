@@ -33,6 +33,15 @@ class IncidentAnalyzer:
     def _build_user_prompt(self, analysis: LogAnalysis, chunks: List[DocumentChunk]) -> str:
         prompt = "## Parser Findings (Deterministic Facts)\n"
         prompt += analysis.model_dump_json(indent=2)
+
+        flagged_ips = [agg for agg in analysis.ip_aggregations if agg.intel_flags]
+        if flagged_ips:
+            prompt += "\n\n## Offline Threat Intelligence Matches (Local Verified Database)\n"
+            for agg in flagged_ips:
+                flags_str = ", ".join(agg.intel_flags)
+                users_str = ", ".join(agg.users_attempted) if agg.users_attempted else "none"
+                prompt += f"- IP: {agg.ip} | Threat Flags: [{flags_str}] | Failed Attempts: {agg.failed_attempts} | Users: {users_str}\n"
+
         prompt += "\n\n## Retrieved Context (Security Guidance)\n"
         for chunk in chunks:
             prompt += f"--- Chunk ID: {chunk.chunk_id} ---\n"

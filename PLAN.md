@@ -134,6 +134,15 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Integrate Rust core engine with Python `LogParser` wrappers while preserving exact Pydantic schema and deterministic guarantees.
 - [x] Add Rust parser unit and integration test suite.
 
+## v1.1 — Offline Threat Intelligence (STIX/MISP)
+
+- [x] Create SQLite `threat_intel` schema and Alembic migration.
+- [x] Implement `src/integrations/intel_feed.py` for offline STIX, MISP, CSV, and JSON threat feed ingestion and lookup.
+- [x] Integrate threat intelligence matching into parser `aggregator.py`, attaching deterministic `intel_flags` to matched IPs.
+- [x] Update LLM prompts and user prompt formatting to elevate risk assessment and cite verified local IOC findings.
+- [x] Create CLI management commands (`secureops intel add`, `list`, `lookup`).
+- [x] Add comprehensive test suite for offline threat intelligence parsing and lookup.
+
 ## Explicitly out of scope
 
 - Model training or fine-tuning

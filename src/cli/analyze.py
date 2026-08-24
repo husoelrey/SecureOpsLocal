@@ -105,6 +105,7 @@ def display_deterministic_facts(analysis: LogAnalysis, logfile: Path, log_type: 
         show_lines=True,
     )
     table.add_column("Source IP", style="bold yellow", no_wrap=True)
+    table.add_column("Threat Intel", style="bold magenta")
     table.add_column("Failed / Attack Attempts", justify="right", style="bold red")
     table.add_column("Successful Events", justify="right", style="bold green")
     table.add_column("Targeted Accounts / Identifiers", style="white")
@@ -122,9 +123,15 @@ def display_deterministic_facts(analysis: LogAnalysis, logfile: Path, log_type: 
 
         failed_style = "bold red" if agg.failed_attempts > 0 else "dim"
         success_style = "bold green" if agg.successful_attempts > 0 else "dim"
+        intel_str = (
+            f"[bold red]{', '.join(agg.intel_flags)}[/bold red]"
+            if agg.intel_flags
+            else "[dim]-[dim]"
+        )
 
         table.add_row(
             agg.ip,
+            intel_str,
             f"[{failed_style}]{agg.failed_attempts}[/{failed_style}]",
             f"[{success_style}]{agg.successful_attempts}[/{success_style}]",
             users_str,

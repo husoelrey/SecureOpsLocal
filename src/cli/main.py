@@ -18,6 +18,7 @@ if sys.platform == "win32":
 
 from src.cli.analyze import analyze_log_file
 from src.cli.feedback import feedback_command
+from src.cli.intel import intel_app
 from src.cli.knowledge import knowledge_app
 from src.cli.watch import watch_log_file
 
@@ -35,6 +36,7 @@ console = Console()
 # Register subcommands and commands
 app.add_typer(knowledge_app, name="knowledge")
 app.command("feedback")(feedback_command)
+app.add_typer(intel_app, name="intel")
 app.command("analyze")(analyze_log_file)
 app.command("watch")(watch_log_file)
 
