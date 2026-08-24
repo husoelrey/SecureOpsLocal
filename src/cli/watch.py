@@ -4,7 +4,7 @@ import asyncio
 import datetime
 import uuid
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import typer
 from rich.align import Align
@@ -23,6 +23,7 @@ from src.llm.base import LocalLLMProvider
 from src.llm.foundry import FoundryLocalProvider
 from src.llm.ollama import OllamaProvider
 from src.parser.aggregator import aggregate_logs
+from src.parser.base import LogParser
 from src.rag.packing import pack_context
 from src.rag.query import build_retrieval_query
 from src.rag.retriever import SemanticRetriever
@@ -36,6 +37,7 @@ console = Console()
 
 def print_massive_alert_banner(
     incident_id: str,
+    target_info: str,
     log_type: str,
     event_count: int,
     threshold: int,
@@ -48,8 +50,12 @@ def print_massive_alert_banner(
         style="bold white on red blink",
     )
     header_text.append(
-        f"INCIDENT ID: {incident_id}  |  LOG SOURCE: {log_type.upper()}\n",
+        f"INCIDENT ID: {incident_id}  |  LOG SOURCE(S): {log_type.upper()}\n",
         style="bold yellow",
+    )
+    header_text.append(
+        f"TARGET FILE(S): {target_info}\n",
+        style="bold cyan",
     )
     header_text.append(
         f"THRESHOLD BREACHED: {event_count} failure/attack events recorded within {window_seconds}s (Threshold: {threshold})\n",
@@ -75,7 +81,7 @@ def print_massive_alert_banner(
 
 def handle_incident_breach(
     window_events: List[ParsedLogLineCreate],
-    logfile: Path,
+    target_info: str,
     log_type: str,
     threshold: int,
     window_seconds: int,
@@ -86,21 +92,26 @@ def handle_incident_breach(
     forward_syslog: Optional[str] = None,
     webhook: Optional[str] = None,
 ) -> None:
-    """Full incident response handler when the failure threshold is breached."""
+    """Full incident response handler when the failure threshold is breached across monitored logs."""
     incident_id = f"inc_live_{uuid.uuid4().hex[:8]}"
 
     # 1. Print Massive Alert Banner
     print_massive_alert_banner(
         incident_id=incident_id,
+        target_info=target_info,
         log_type=log_type,
         event_count=len(window_events),
         threshold=threshold,
         window_seconds=window_seconds,
     )
 
-    # 2. Deterministic Fact Aggregation
+    # 2. Deterministic Fact & Timeline Aggregation
     analysis = aggregate_logs(window_events)
-    display_deterministic_facts(analysis, logfile, log_type=log_type)
+    display_deterministic_facts(
+        analysis=analysis,
+        target_info=target_info,
+        log_type=log_type,
+    )
 
     # 3. RAG Retrieval
     packed_chunks = []
@@ -144,7 +155,9 @@ def handle_incident_breach(
 
         # 5. SIEM Syslog Forwarding
         if forward_syslog:
-            syslog_ok = send_syslog(forward_syslog, report, incident_id=incident_id)
+            syslog_ok = send_syslog(
+                forward_syslog, report, incident_id=incident_id
+            )
             if syslog_ok:
                 console.print(
                     f"[bold green]✓ Real-time RFC 5424 Syslog forwarded to SIEM:[/bold green] [cyan]{forward_syslog}[/cyan]"
@@ -179,23 +192,27 @@ def handle_incident_breach(
             )
         )
 
-    console.print("\n[bold cyan]⚡ Resuming continuous log surveillance...[/bold cyan]\n")
+    console.print(
+        "\n[bold cyan]⚡ Resuming continuous log surveillance...[/bold cyan]\n"
+    )
 
 
 def watch_log_file(
-    logfile: Path = typer.Argument(
-        ...,
-        help="Path to the security log file to tail and monitor.",
-        file_okay=True,
-        dir_okay=False,
-        readable=True,
-        resolve_path=True,
+    logfile: Optional[Path] = typer.Argument(
+        None,
+        help="Optional single positional path to a security log file to tail and monitor.",
     ),
-    log_type: str = typer.Option(
-        "ssh",
+    files: Optional[List[Path]] = typer.Option(
+        None,
+        "--file",
+        "-f",
+        help="Paths to security log files to tail and monitor simultaneously.",
+    ),
+    log_types: Optional[List[str]] = typer.Option(
+        None,
         "--log-type",
         "-t",
-        help="Type of security log source ('ssh', 'windows', 'nginx', 'aws').",
+        help="Type(s) of security log source ('ssh', 'windows', 'nginx', 'aws'). Can be specified multiple times.",
     ),
     threshold: int = typer.Option(
         5,
@@ -251,29 +268,60 @@ def watch_log_file(
     ),
 ) -> None:
     """
-    Continuously tail a security log file in background daemon mode.
-    Maintains a sliding window of events and automatically triggers RAG and LLM analysis on anomaly bursts.
+    Continuously tail a security log file (or multiple files) in background daemon mode.
+    Maintains a correlated sliding window of events and automatically triggers RAG and LLM analysis on anomaly bursts.
     """
-    if not logfile.exists():
-        console.print(f"[bold red][X] Error: File '{logfile}' does not exist.[/bold red]")
+    target_files: List[Path] = []
+    if logfile is not None:
+        target_files.append(logfile)
+    if files:
+        target_files.extend(files)
+
+    if not target_files:
+        console.print(
+            "[bold red][X] Error: No log file specified. Provide a log file path or use '--file <path>'.[/bold red]"
+        )
         raise typer.Exit(code=1)
 
-    try:
-        parser = get_parser_for_log_type(log_type)
-    except ValueError as e:
-        console.print(f"[bold red][X] Error: {e}[/bold red]")
-        raise typer.Exit(code=1)
+    for f in target_files:
+        if not f.exists():
+            console.print(f"[bold red][X] Error: File '{f}' does not exist.[/bold red]")
+            raise typer.Exit(code=1)
+
+    types_list = list(log_types or [])
+    targets: List[Tuple[Path, LogParser]] = []
+    types_display: List[str] = []
+
+    for idx, fpath in enumerate(target_files):
+        if idx < len(types_list):
+            ltype = types_list[idx]
+        elif len(types_list) == 1:
+            ltype = types_list[0]
+        else:
+            ltype = "ssh"
+
+        try:
+            parser = get_parser_for_log_type(ltype)
+        except ValueError as e:
+            console.print(f"[bold red][X] Error: {e}[/bold red]")
+            raise typer.Exit(code=1)
+
+        targets.append((fpath, parser))
+        types_display.append(ltype.upper())
 
     tracker = SlidingWindowEventTracker(
         threshold=threshold,
         window_seconds=window_seconds,
     )
 
+    target_names = ", ".join(f.name for f in target_files)
+    types_str = ", ".join(sorted(list(set(types_display))))
+
     console.print(
         Panel(
-            f"[bold cyan]SecureOps Local — Continuous Log Surveillance Daemon[/bold cyan]\n"
-            f"[bold]Monitoring Target:[/bold] {logfile.name} ({logfile.resolve()})\n"
-            f"[bold]Log Source Type:[/bold] {log_type.upper()}  |  [bold]Threshold:[/bold] {threshold} failures / {window_seconds}s\n"
+            f"[bold cyan]SecureOps Local — Continuous Multi-Source Log Surveillance Daemon[/bold cyan]\n"
+            f"[bold]Monitoring Targets:[/bold] {target_names}\n"
+            f"[bold]Log Source Types:[/bold] {types_str}  |  [bold]Threshold:[/bold] {threshold} failures / {window_seconds}s\n"
             f"[bold]AI Model Profile:[/bold] {model} ({provider_name})\n"
             f"[dim]Press Ctrl+C at any time to safely stop the daemon.[/dim]",
             title="[bold green]Daemon Active[/bold green]",
@@ -285,8 +333,8 @@ def watch_log_file(
     def on_breach_callback(events: List[ParsedLogLineCreate]) -> None:
         handle_incident_breach(
             window_events=events,
-            logfile=logfile,
-            log_type=log_type,
+            target_info=target_names,
+            log_type=types_str,
             threshold=threshold,
             window_seconds=window_seconds,
             model=model,
@@ -298,8 +346,7 @@ def watch_log_file(
         )
 
     engine = LogWatcherEngine(
-        file_path=logfile,
-        parser=parser,
+        targets=targets,
         tracker=tracker,
         on_breach=on_breach_callback,
         start_from_beginning=from_beginning,

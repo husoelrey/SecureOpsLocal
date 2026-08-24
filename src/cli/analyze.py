@@ -4,7 +4,7 @@ import asyncio
 import datetime
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import typer
 from rich.console import Console
@@ -16,7 +16,7 @@ from src.llm.analyzer import IncidentAnalyzer
 from src.llm.base import LocalLLMProvider
 from src.llm.foundry import FoundryLocalProvider
 from src.llm.ollama import OllamaProvider
-from src.parser.aggregator import aggregate_logs
+from src.parser.aggregator import CrossLogAggregator
 from src.parser.aws import AWSCloudTrailParser
 from src.parser.base import LogParser
 from src.parser.nginx import NginxAccessParser
@@ -80,7 +80,11 @@ def validate_log_file(logfile: Path) -> None:
         raise typer.Exit(code=1)
 
 
-def display_deterministic_facts(analysis: LogAnalysis, logfile: Path, log_type: str = "ssh") -> None:
+def display_deterministic_facts(
+    analysis: LogAnalysis,
+    target_info: str,
+    log_type: str = "ssh",
+) -> None:
     """Render deterministic parser findings into a clean Rich table."""
     time_str = "N/A"
     if analysis.start_time and analysis.end_time:
@@ -90,8 +94,8 @@ def display_deterministic_facts(analysis: LogAnalysis, logfile: Path, log_type: 
         )
 
     summary_text = (
-        f"[bold]Target File:[/bold] {logfile.name}  |  "
-        f"[bold]Log Type:[/bold] {log_type.upper()}  |  "
+        f"[bold]Target(s):[/bold] {target_info}  |  "
+        f"[bold]Log Type(s):[/bold] {log_type.upper()}  |  "
         f"[bold]Total Events/Lines:[/bold] {analysis.total_lines}  |  "
         f"[bold]Unparsed:[/bold] {analysis.unparsed_lines}  |  "
         f"[bold]Unique Source IPs:[/bold] {len(analysis.ip_aggregations)}\n"
@@ -118,7 +122,9 @@ def display_deterministic_facts(analysis: LogAnalysis, logfile: Path, log_type: 
         last_str = (
             agg.last_seen.strftime("%Y-%m-%d %H:%M:%S") if agg.last_seen else "N/A"
         )
-        users_str = ", ".join(agg.users_attempted) if agg.users_attempted else "[none]"
+        users_str = (
+            ", ".join(agg.users_attempted) if agg.users_attempted else "[none]"
+        )
 
         failed_style = "bold red" if agg.failed_attempts > 0 else "dim"
         success_style = "bold green" if agg.successful_attempts > 0 else "dim"
@@ -137,8 +143,34 @@ def display_deterministic_facts(analysis: LogAnalysis, logfile: Path, log_type: 
     )
     console.print(table)
 
+    # Render correlated multi-source timeline if available
+    if analysis.multi_source_timeline:
+        timeline_table = Table(
+            title="Correlated Multi-Source Event Timeline (By Source IP)",
+            show_header=True,
+            header_style="bold magenta",
+            show_lines=True,
+        )
+        timeline_table.add_column("Source IP", style="bold yellow", no_wrap=True)
+        timeline_table.add_column("Timestamp (UTC)", style="cyan")
+        timeline_table.add_column("Event Type", style="bold white")
+        timeline_table.add_column("Account / User", style="green")
+        timeline_table.add_column("Raw Evidence Snippet", style="dim")
 
-def display_assessment(report: IncidentReportCreate, packed_chunks: list[DocumentChunk]) -> None:
+        for ip, events in analysis.multi_source_timeline.items():
+            for ev in events:
+                ts_str = ev.get("timestamp", "N/A")
+                ev_type = ev.get("event_type", "unknown")
+                user_str = ev.get("user") or "[none]"
+                raw_snip = (ev.get("raw_content") or "")[:80]
+                timeline_table.add_row(ip, ts_str, ev_type, user_str, raw_snip)
+
+        console.print(timeline_table)
+
+
+def display_assessment(
+    report: IncidentReportCreate, packed_chunks: list[DocumentChunk]
+) -> None:
     """Render the cautious LLM risk assessment, recommendations, and citations."""
     risk_level = report.risk_level.upper()
     if risk_level == "HIGH":
@@ -228,20 +260,21 @@ def display_assessment(report: IncidentReportCreate, packed_chunks: list[Documen
 
 
 def analyze_log_file(
-    logfile: Path = typer.Argument(
-        ...,
-        help="Path to the security log file (.log, .txt, .json, .evtx).",
-        exists=True,
-        file_okay=True,
-        dir_okay=False,
-        readable=True,
-        resolve_path=True,
+    logfile: Optional[Path] = typer.Argument(
+        None,
+        help="Optional single positional path to a security log file.",
     ),
-    log_type: str = typer.Option(
-        "ssh",
+    files: Optional[List[Path]] = typer.Option(
+        None,
+        "--file",
+        "-f",
+        help="Paths to security log files to analyze (can be specified multiple times for cross-log correlation).",
+    ),
+    log_types: Optional[List[str]] = typer.Option(
+        None,
         "--log-type",
         "-t",
-        help="Type of security log source ('ssh', 'windows', 'nginx', 'aws').",
+        help="Type(s) of security log source ('ssh', 'windows', 'nginx', 'aws'). Can be specified multiple times.",
     ),
     model: str = typer.Option(
         "foundation-sec-8b-reasoning:q4_k_m",
@@ -290,53 +323,93 @@ def analyze_log_file(
         help="Webhook endpoint URL for automated Jira/ServiceNow ticket creation.",
     ),
 ) -> None:
-    """Analyze a security log file (SSH, Windows, Nginx, AWS), retrieve RAG guidance, and generate a cautious risk report."""
-    validate_log_file(logfile)
+    """
+    Analyze one or multiple security log files (SSH, Windows, Nginx, AWS),
+    correlate events deterministically across sources, retrieve RAG guidance,
+    and generate a cautious multi-source risk report.
+    """
+    # 1. Resolve and validate target log files and types
+    target_files: List[Path] = []
+    if logfile is not None:
+        target_files.append(logfile)
+    if files:
+        target_files.extend(files)
 
-    try:
-        parser = get_parser_for_log_type(log_type)
-    except ValueError as e:
-        console.print(f"[bold red][X] Error: {e}[/bold red]")
+    if not target_files:
+        console.print(
+            "[bold red][X] Error: No log file specified. Provide a log file path or use '--file <path>'.[/bold red]"
+        )
         raise typer.Exit(code=1)
+
+    for f in target_files:
+        validate_log_file(f)
+
+    types_list = list(log_types or [])
+    paired_targets: List[Tuple[Path, str, LogParser]] = []
+
+    for idx, fpath in enumerate(target_files):
+        if idx < len(types_list):
+            ltype = types_list[idx]
+        elif len(types_list) == 1:
+            ltype = types_list[0]
+        else:
+            ltype = "ssh"
+
+        try:
+            parser = get_parser_for_log_type(ltype)
+        except ValueError as e:
+            console.print(f"[bold red][X] Error: {e}[/bold red]")
+            raise typer.Exit(code=1)
+
+        paired_targets.append((fpath, ltype, parser))
 
     current_year = year or datetime.datetime.now(datetime.timezone.utc).year
     incident_id = f"inc_{uuid.uuid4().hex[:8]}"
 
+    target_names = ", ".join(f.name for f in target_files)
+    target_types_str = ", ".join(
+        sorted(list({t.upper() for _, t, _ in paired_targets}))
+    )
+
     console.print(
         Panel(
             f"[bold cyan]SecureOps Local Incident Review[/bold cyan]\n"
-            f"[bold]Incident ID:[/bold] {incident_id}  |  [bold]Target:[/bold] {logfile.name}\n"
-            f"[bold]Log Type:[/bold] {log_type.upper()}  |  [bold]Model Profile:[/bold] {model} ({provider_name})",
+            f"[bold]Incident ID:[/bold] {incident_id}  |  [bold]Target(s):[/bold] {target_names}\n"
+            f"[bold]Log Type(s):[/bold] {target_types_str}  |  [bold]Model Profile:[/bold] {model} ({provider_name})",
             title="[bold blue]SecureOps Local[/bold blue]",
             expand=False,
         )
     )
 
-    # 1. Deterministic Parsing
+    # 2. Deterministic Parsing & Cross-Log Correlation
+    aggregator = CrossLogAggregator(current_year=current_year)
+
     with console.status(
-        f"[bold green]Parsing {log_type.upper()} logs deterministically...[/bold green]",
+        f"[bold green]Parsing and correlating {len(paired_targets)} log source(s) deterministically...[/bold green]",
         spinner="dots",
     ):
         try:
-            parsed_lines = list(
-                parser.parse_file(str(logfile), current_year=current_year)
-            )
+            for fpath, _, parser in paired_targets:
+                aggregator.add_file(fpath, parser)
+            analysis = aggregator.aggregate()
         except Exception as e:
-            console.print(f"[bold red][X] Failed to parse log file: {e}[/bold red]")
+            console.print(f"[bold red][X] Failed to parse log files: {e}[/bold red]")
             raise typer.Exit(code=1)
-
-        analysis = aggregate_logs(parsed_lines)
 
     if analysis.total_lines == 0:
         console.print(
-            "[bold yellow][!] No log lines were parsed from the input file.[/bold yellow]"
+            "[bold yellow][!] No log lines were parsed from the input file(s).[/bold yellow]"
         )
         raise typer.Exit(code=0)
 
-    # Display Deterministic Facts immediately
-    display_deterministic_facts(analysis, logfile, log_type=log_type)
+    # Display Deterministic Facts & Correlated Timeline
+    display_deterministic_facts(
+        analysis=analysis,
+        target_info=target_names,
+        log_type=target_types_str,
+    )
 
-    # 2. RAG Retrieval
+    # 3. RAG Retrieval
     packed_chunks = []
     with console.status(
         "[bold green]Retrieving security guidance from local knowledge base...[/bold green]",
@@ -351,7 +424,7 @@ def analyze_log_file(
                 retrieved, max_words=1500, max_chunks_per_source=2
             )
 
-    # 3. LLM Generation
+    # 4. LLM Generation
     provider: LocalLLMProvider
     if provider_name.lower() == "foundry":
         effective_url = base_url or "http://localhost:39251"
@@ -364,7 +437,7 @@ def analyze_log_file(
 
     try:
         with console.status(
-            f"[bold green]Generating cautious risk assessment with {model}...[/bold green]",
+            f"[bold green]Generating cautious multi-source risk assessment with {model}...[/bold green]",
             spinner="dots",
         ):
             report = asyncio.run(
@@ -382,15 +455,16 @@ def analyze_log_file(
                 f"[dim]Reason: {e}[/dim]\n\n"
                 f"[bold green]Note:[/bold green] Parser truth and deterministic findings remain completely intact above.",
                 title="[bold yellow]Local LLM Runtime Offline[/bold yellow]",
+                border_style="yellow",
                 expand=False,
             )
         )
         return
 
-    # 4. Render Assessment & Output
+    # 5. Render Assessment & Output
     display_assessment(report, packed_chunks)
 
-    # 5. Export JSON if requested
+    # 6. Export JSON if requested
     if output_json:
         try:
             output_json.parent.mkdir(parents=True, exist_ok=True)
@@ -401,7 +475,7 @@ def analyze_log_file(
         except Exception as e:
             console.print(f"[bold red][X] Failed to export JSON report: {e}[/bold red]")
 
-    # 6. Forward Syslog if requested
+    # 7. Forward Syslog if requested
     if forward_syslog:
         success = send_syslog(forward_syslog, report, incident_id=incident_id)
         if success:
@@ -413,7 +487,7 @@ def analyze_log_file(
                 f"[bold red][X] Failed to forward Syslog report to:[/bold red] [yellow]{forward_syslog}[/yellow]"
             )
 
-    # 7. Dispatch Webhook if requested
+    # 8. Dispatch Webhook if requested
     if webhook:
         success = send_webhook(webhook, report, incident_id=incident_id)
         if success:
