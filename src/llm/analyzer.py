@@ -33,6 +33,18 @@ class IncidentAnalyzer:
     def _build_user_prompt(self, analysis: LogAnalysis, chunks: List[DocumentChunk]) -> str:
         prompt = "## Parser Findings (Deterministic Facts)\n"
         prompt += analysis.model_dump_json(indent=2)
+
+        if analysis.multi_source_timeline:
+            prompt += "\n\n## Multi-Source Correlation Timeline (Chronological per Source IP)\n"
+            for ip, events in analysis.multi_source_timeline.items():
+                prompt += f"\n### Source IP: {ip}\n"
+                for ev in events:
+                    ts = ev.get("timestamp", "N/A")
+                    ev_type = ev.get("event_type", "unknown")
+                    user = f" | User: {ev['user']}" if ev.get("user") else ""
+                    port = f" | Port: {ev['port']}" if ev.get("port") else ""
+                    prompt += f"- [{ts}] Event: {ev_type}{user}{port}\n"
+
         prompt += "\n\n## Retrieved Context (Security Guidance)\n"
         for chunk in chunks:
             prompt += f"--- Chunk ID: {chunk.chunk_id} ---\n"
