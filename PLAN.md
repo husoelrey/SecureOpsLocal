@@ -143,6 +143,14 @@ security constraints, model policy, benchmark rules, and acceptance criteria, re
 - [x] Create CLI management commands (`secureops intel add`, `list`, `lookup`).
 - [x] Add comprehensive test suite for offline threat intelligence parsing and lookup.
 
+## v1.1 — High-Performance Engine & Cross-Log Correlation
+
+- [x] Implement `CrossLogAggregator` to deterministically correlate multi-source logs by Source IP and Timestamp.
+- [x] Update CLI `analyze` and `watch` commands to support multiple `--file` and `--log-type` arguments simultaneously.
+- [x] Update LLM prompt and user prompt synthesis for Multi-Source Timeline and multi-stage attack risk evaluation.
+- [x] Implement multi-target sliding window log watcher daemon.
+- [x] Add comprehensive test suite for multi-source correlation and multi-stage attack analysis.
+
 ## Explicitly out of scope
 
 - Model training or fine-tuning

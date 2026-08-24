@@ -1,4 +1,4 @@
-from src.parser.aggregator import aggregate_logs
+from src.parser.aggregator import CrossLogAggregator, aggregate_logs
 from src.parser.aws import AWSCloudTrailParser
 from src.parser.base import LogParser
 from src.parser.nginx import NginxAccessParser
@@ -11,5 +11,6 @@ __all__ = [
     "WindowsEventLogParser",
     "NginxAccessParser",
     "AWSCloudTrailParser",
+    "CrossLogAggregator",
     "aggregate_logs",
 ]

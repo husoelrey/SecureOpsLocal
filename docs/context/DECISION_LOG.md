@@ -180,6 +180,15 @@ Statuses: Proposed, Accepted, Superseded, Rejected.
 - Alternatives: Cloud Threat Intelligence APIs (violates air-gapped and raw data privacy guarantees).
 - Consequence or fallback: Organizations can import sanitized, verified threat feeds offline; missing indicators simply yield no match.
 
+## D-026 — Deterministic cross-log correlation engine
+
+- Status: Accepted
+- Date: 2026-08-24
+- Decision: Implement deterministic cross-log correlation in Python (`CrossLogAggregator`) that merges events across heterogeneous log sources (SSH, Nginx, Windows, AWS), groups them by Source IP, and sorts them chronologically by Timestamp before passing the unified timeline to the LLM.
+- Rationale: Adheres strictly to AGENTS.md rule that correlation and event aggregation must be performed deterministically in code, not delegated to the LLM. The LLM's role is restricted to evaluating the risk of multi-stage attack patterns from the verified timeline.
+- Alternatives: Asking the LLM to correlate disparate log blocks directly (violates determinism rules and risks hallucinations).
+- Consequence or fallback: The LLM receives pre-correlated facts and chronological event streams with zero ambiguity in event order or counts.
+
 ## New decision template
 
 ## D-XXX — Title

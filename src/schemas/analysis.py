@@ -1,6 +1,7 @@
 import datetime
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class IPAggregation(BaseModel):
@@ -20,3 +21,4 @@ class LogAnalysis(BaseModel):
     end_time: datetime.datetime | None
     ip_aggregations: list[IPAggregation]
     limitations: list[str]
+    multi_source_timeline: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
