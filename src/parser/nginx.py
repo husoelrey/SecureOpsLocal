@@ -1,10 +1,24 @@
 import datetime
 import json
+import logging
 import re
 import urllib.parse
+from typing import Iterator
 
 from src.parser.base import LogParser
 from src.schemas.parsed_log_line import ParsedLogLineCreate
+
+logger = logging.getLogger(__name__)
+
+try:
+    import secureops_core  # type: ignore[import-untyped]
+
+    _RUST_AVAILABLE = True
+except ImportError:
+    _RUST_AVAILABLE = False
+    logger.warning(
+        "secureops_core Rust extension not available; falling back to pure Python."
+    )
 
 # Nginx combined log format:
 # $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent"
@@ -69,7 +83,6 @@ class NginxAccessParser(LogParser):
 
     def _parse_time(self, time_str: str, current_year: int) -> datetime.datetime:
         time_str = time_str.strip()
-        # Format: 14/Aug/2026:12:00:00 +0000 or 14/Aug/2026:12:00:00
         for fmt in (
             "%d/%b/%Y:%H:%M:%S %z",
             "%d/%b/%Y:%H:%M:%S",
@@ -91,13 +104,11 @@ class NginxAccessParser(LogParser):
         if not text:
             return None
 
-        # Test both raw and decoded text
         candidates = [text]
         try:
             decoded = urllib.parse.unquote_plus(text)
             if decoded != text:
                 candidates.append(decoded)
-            # Double decode for evasion
             double_decoded = urllib.parse.unquote_plus(decoded)
             if double_decoded not in candidates:
                 candidates.append(double_decoded)
@@ -146,6 +157,18 @@ class NginxAccessParser(LogParser):
         return "http_request"
 
     def parse_line(self, line: str, current_year: int) -> ParsedLogLineCreate:
+        if _RUST_AVAILABLE:
+            raw = secureops_core.parse_nginx_line(line, current_year)
+            return ParsedLogLineCreate(
+                timestamp=raw["timestamp"],
+                source_ip=raw.get("source_ip"),
+                user=raw.get("user"),
+                event_type=raw["event_type"],
+                port=raw.get("port"),
+                raw_content=raw["raw_content"],
+                is_parsed=raw["is_parsed"],
+            )
+
         line_clean = line.strip()
         if not line_clean:
             return ParsedLogLineCreate(
@@ -241,3 +264,21 @@ class NginxAccessParser(LogParser):
             raw_content=line,
             is_parsed=False,
         )
+
+    def parse_file(
+        self, file_path: str, current_year: int
+    ) -> Iterator[ParsedLogLineCreate]:
+        if _RUST_AVAILABLE:
+            raw_lines = secureops_core.parse_nginx_file(file_path, current_year)
+            for raw in raw_lines:
+                yield ParsedLogLineCreate(
+                    timestamp=raw["timestamp"],
+                    source_ip=raw.get("source_ip"),
+                    user=raw.get("user"),
+                    event_type=raw["event_type"],
+                    port=raw.get("port"),
+                    raw_content=raw["raw_content"],
+                    is_parsed=raw["is_parsed"],
+                )
+        else:
+            yield from super().parse_file(file_path, current_year)
