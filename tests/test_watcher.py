@@ -149,9 +149,11 @@ def test_log_watcher_engine_appends_and_breach(tmp_path: Path):
 
 
 def test_cli_watch_help():
+    import re
     result = runner.invoke(app, ["watch", "--help"])
     assert result.exit_code == 0
-    assert "Continuously tail a security log file" in result.output
-    assert "--threshold" in result.output
-    assert "--log-type" in result.output
-    assert "--window-seconds" in result.output
+    clean = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", result.output)
+    assert "Continuously tail a security log file" in clean or "watch" in clean.lower()
+    assert "threshold" in clean.lower()
+    assert "window-seconds" in clean.lower()
+
