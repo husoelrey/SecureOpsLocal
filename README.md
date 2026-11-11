@@ -1,4 +1,5 @@
 # SecureOps Local: Architecture, Engineering, and Operational Reference Manual
+[![CI](https://github.com/husoelrey/SecureOpsLocal/actions/workflows/ci.yml/badge.svg)](https://github.com/husoelrey/SecureOpsLocal/actions/workflows/ci.yml)
 
 ---
 
