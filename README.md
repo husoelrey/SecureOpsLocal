@@ -1,5 +1,10 @@
 # SecureOps Local: Architecture, Engineering, and Operational Reference Manual
 [![CI](https://github.com/husoelrey/SecureOpsLocal/actions/workflows/ci.yml/badge.svg)](https://github.com/husoelrey/SecureOpsLocal/actions/workflows/ci.yml)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat&logo=fastapi&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-EE4C2C?style=flat&logo=pytorch&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white)
 
 ---
 
